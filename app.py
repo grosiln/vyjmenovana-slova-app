@@ -781,6 +781,17 @@ def nastav_vzhled():
         .stApp {
             background: linear-gradient(180deg, #f8fbff 0%, #edf8ff 45%, #fff9ef 100%);
         }
+        /* Zabrani useknuti obsahu na nekterych zarizenich/browserech */
+        [data-testid="stAppViewContainer"],
+        [data-testid="stAppViewContainer"] .main,
+        section.main {
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+        }
+        [data-testid="stAppViewContainer"] .main {
+            overflow-y: auto !important;
+        }
         .block-container {padding-top: 1.2rem; max-width: 1280px; padding-left: 1.4rem; padding-right: 1.4rem;}
         h1, h2, h3 {font-weight: 800 !important;}
         h1 {font-size: clamp(1.7rem, 2.6vw, 2.45rem) !important;}
