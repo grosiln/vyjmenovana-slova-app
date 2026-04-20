@@ -318,6 +318,12 @@ def text_hvezdicek(pocet_hvezd):
     return text
 
 
+def vykresli_hvezdy(pocet_hvezd, max_hvezd=5):
+    plne = "⭐" * min(pocet_hvezd, max_hvezd)
+    prazdne = "☆" * max(0, max_hvezd - min(pocet_hvezd, max_hvezd))
+    return f"{plne}{prazdne}"
+
+
 def render_domu():
     st.markdown(
         """
@@ -470,8 +476,16 @@ def render_statistiky():
     c3.metric("Úspěšnost", f"{usp} %")
     st.markdown(f"### Aktuální odznak: {odznak_za_uspesnost(usp)}")
     hvezdy_celkem, chybi_celkem = hvezdicky_za_spravne(spravne)
-    st.markdown(f"### ⭐ Hvězdičky celkem: {text_hvezdicek(hvezdy_celkem)}")
-    st.write(f"🎮 Dostupné hvězdy na minihry: **{dostupne_hvezdy()}**")
+    st.markdown(f"### ⭐ Celkem: {text_hvezdicek(hvezdy_celkem)}")
+    st.markdown(
+        f"""
+        <div class="star-counter-box">
+            <div class="star-label">⭐ Dostupné pro minihry</div>
+            <div class="star-number">{dostupne_hvezdy()}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     if chybi_celkem > 0:
         st.caption(f"Do další hvězdičky chybí {chybi_celkem} správných odpovědí.")
     else:
@@ -502,9 +516,21 @@ def render_minihry():
 
     ziskane = ziskane_hvezdy_celkem()
     dostupne = dostupne_hvezdy()
-    c1, c2 = st.columns(2)
-    c1.metric("Získané hvězdy celkem", ziskane)
-    c2.metric("Dostupné hvězdy", dostupne)
+    st.markdown(
+        f"""
+        <div class="star-row">
+            <div class="star-counter-box">
+                <div class="star-label">⭐ Získané celkem</div>
+                <div class="star-number">{ziskane}</div>
+            </div>
+            <div class="star-counter-box">
+                <div class="star-label">⭐ Dostupné teď</div>
+                <div class="star-number">{dostupne}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if st.session_state.arcade and st.session_state.arcade.get("hotovo"):
         render_vysledek()
@@ -522,7 +548,7 @@ def render_minihry():
             """
             <div class="feature-card">
                 <h3>⭐ Rychlá hra</h3>
-                <p>Cena: 3 hvězdy<br>Životy: 3<br>Kola: 18</p>
+                <p>Cena: ⭐⭐⭐<br>Životy: ❤️❤️❤️<br>Kola: 18</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -538,7 +564,7 @@ def render_minihry():
             """
             <div class="feature-card">
                 <h3>⭐ Delší hra</h3>
-                <p>Cena: 5 hvězd<br>Životy: 5<br>Kola: 28</p>
+                <p>Cena: ⭐⭐⭐⭐⭐<br>Životy: ❤️❤️❤️❤️❤️<br>Kola: 28</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -633,6 +659,32 @@ def nastav_vzhled():
             margin-bottom: 0.7rem;
             box-shadow: 0 6px 14px rgba(40, 62, 120, 0.08);
         }
+        .star-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem;
+            margin-bottom: 0.9rem;
+        }
+        .star-counter-box {
+            background: linear-gradient(135deg, #fff7d1 0%, #ffe9a3 100%);
+            border: 2px solid #ffd76a;
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.7rem;
+            box-shadow: 0 6px 14px rgba(120, 96, 20, 0.1);
+        }
+        .star-label {
+            font-size: clamp(1rem, 1.3vw, 1.22rem);
+            font-weight: 800;
+            color: #5b4600;
+            margin-bottom: 0.2rem;
+        }
+        .star-number {
+            font-size: clamp(1.9rem, 3.6vw, 2.7rem);
+            font-weight: 900;
+            color: #3f2f00;
+            line-height: 1.05;
+        }
         .word-box {
             font-size: clamp(1.45rem, 3.4vw, 2.1rem);
             text-align: center;
@@ -667,6 +719,7 @@ def nastav_vzhled():
                 border-radius: 12px !important;
             }
             .hero-box {padding: 0.9rem 1rem;}
+            .star-row {grid-template-columns: 1fr;}
             .word-box {
                 border-width: 2px;
                 border-radius: 12px;
