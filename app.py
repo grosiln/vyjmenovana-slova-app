@@ -6,6 +6,16 @@ from pathlib import Path
 
 import streamlit as st
 from games.hra_chytani import render_hru, render_vysledek, spustit_hru
+from games.hra_lov_barev import (
+    render_hru as render_hru_lov_barev,
+    render_vysledek as render_vysledek_lov_barev,
+    spustit_hru as spustit_hru_lov_barev,
+)
+from games.hra_semafor import (
+    render_hru as render_hru_semafor,
+    render_vysledek as render_vysledek_semafor,
+    spustit_hru as spustit_hru_semafor,
+)
 
 
 SOUBOR_STATISTIK = Path("statistiky_vyjmenovana_slova.json")
@@ -239,6 +249,10 @@ def init_state():
         st.session_state.vyber_pismeno = "Všechna"
     if "arcade" not in st.session_state:
         st.session_state.arcade = None
+    if "semafor" not in st.session_state:
+        st.session_state.semafor = None
+    if "lov_barev" not in st.session_state:
+        st.session_state.lov_barev = None
 
 
 def priprav_test_iy(vyber):
@@ -425,16 +439,31 @@ def render_domu():
 
 def render_prehled():
     st.header("📚 Přehled vyjmenovaných slov")
+    st.info("Vyber písmeno, přečti si slova a hned si je můžeš procvičit.")
     for p in ["B", "L", "M", "P", "S", "V", "Z"]:
+        slova = VYJMENOVANA[p]
+        pocet = len(slova)
         st.markdown(
             f"""
             <div class="letter-card">
                 <h3>Po {p}</h3>
-                <p>{", ".join(VYJMENOVANA[p])}</p>
+                <p><b>Počet slov:</b> {pocet}</p>
+                <p>{", ".join(slova)}</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
+        c1, c2 = st.columns(2)
+        if c1.button(f"📝 Trénovat i/y po {p}", key=f"iy_{p}", use_container_width=True):
+            priprav_test_iy(p)
+            st.session_state.sekce = "Test"
+            st.session_state.menu_sekce = "Test"
+            st.rerun()
+        if c2.button(f"🔎 Poznávačka po {p}", key=f"pozn_{p}", use_container_width=True):
+            priprav_poznavacku(p)
+            st.session_state.sekce = "Test"
+            st.session_state.menu_sekce = "Test"
+            st.rerun()
 
 
 def render_test():
@@ -483,7 +512,7 @@ def render_test():
                     f"<div class='hint-emoji-box'>{emoji}</div>",
                     unsafe_allow_html=True,
                 )
-                st.caption("Vizuální nápověda")
+                st.caption("Vizuální nápověda (obrázek se připravuje)")
         c1, c2 = st.columns(2)
         if c1.button("🔵 i", use_container_width=True):
             vyhodnot("i")
@@ -588,21 +617,39 @@ def render_minihry():
         render_hru()
         return
 
-    st.markdown("### Vyber herní režim")
-    r1, r2 = st.columns(2)
+    if st.session_state.semafor and st.session_state.semafor.get("hotovo"):
+        render_vysledek_semafor()
+        return
+
+    if st.session_state.semafor and st.session_state.semafor.get("aktivni"):
+        render_hru_semafor()
+        return
+
+    if st.session_state.lov_barev and st.session_state.lov_barev.get("hotovo"):
+        render_vysledek_lov_barev()
+        return
+
+    if st.session_state.lov_barev and st.session_state.lov_barev.get("aktivni"):
+        render_hru_lov_barev()
+        return
+
+    st.markdown("### Vyber minihru")
+    r1, r2, r3 = st.columns(3)
 
     with r1:
         st.markdown(
             """
             <div class="feature-card">
-                <h3>⭐ Rychlá hra</h3>
-                <p>Cena: ⭐⭐⭐<br>Životy: ❤️❤️❤️<br>Kola: 18</p>
+                <h3>🕹️ Chytání hvězdiček</h3>
+                <p>Chytej hvězdu v mřížce.<br>Cena: ⭐⭐⭐<br>Životy: ❤️❤️❤️<br>Kola: 18</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        if st.button("Spustit rychlou hru (3 ⭐)", use_container_width=True):
+        if st.button("Hrát: Chytání hvězdiček (3 ⭐)", key="menu_chytani", use_container_width=True):
             if utrat_hvezdy(3):
+                st.session_state.semafor = None
+                st.session_state.lov_barev = None
                 spustit_hru(zivoty=3, kola=18)
                 st.rerun()
             st.error("Nemáš dost hvězdiček.")
@@ -611,15 +658,35 @@ def render_minihry():
         st.markdown(
             """
             <div class="feature-card">
-                <h3>⭐ Delší hra</h3>
-                <p>Cena: ⭐⭐⭐⭐⭐<br>Životy: ❤️❤️❤️❤️❤️<br>Kola: 28</p>
+                <h3>🚦 Semafor sprint</h3>
+                <p>Reaguj na barvy semaforu.<br>Cena: ⭐⭐⭐⭐<br>Životy: ❤️❤️❤️❤️<br>Kola: 16</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        if st.button("Spustit delší hru (5 ⭐)", use_container_width=True):
+        if st.button("Hrát: Semafor sprint (4 ⭐)", key="menu_semafor", use_container_width=True):
+            if utrat_hvezdy(4):
+                st.session_state.arcade = None
+                st.session_state.lov_barev = None
+                spustit_hru_semafor(zivoty=4, kola=16)
+                st.rerun()
+            st.error("Nemáš dost hvězdiček.")
+
+    with r3:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>🌈 Lov barev</h3>
+                <p>Najdi správnou barvu.<br>Cena: ⭐⭐⭐⭐⭐<br>Životy: ❤️❤️❤️❤️❤️<br>Kola: 20</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Hrát: Lov barev (5 ⭐)", key="menu_lov_barev", use_container_width=True):
             if utrat_hvezdy(5):
-                spustit_hru(zivoty=5, kola=28)
+                st.session_state.arcade = None
+                st.session_state.semafor = None
+                spustit_hru_lov_barev(zivoty=5, kola=20)
                 st.rerun()
             st.error("Nemáš dost hvězdiček.")
 
