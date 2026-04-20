@@ -765,17 +765,6 @@ def _render_tabulka_zebricku(klic_hry, nazev_hry):
             unsafe_allow_html=True,
         )
 
-    with st.expander("⚠️ Správa žebříčku této hry"):
-        if st.button(
-            "Smazat žebříček",
-            key=f"lb_clear_{klic_hry}",
-            use_container_width=True,
-        ):
-            vymaz_zebricek(klic_hry)
-            st.success("Žebříček byl smazán.")
-            st.rerun()
-
-
 def render_zebricek():
     st.header("🏆 Žebříček miniher")
     st.caption("Hru pustíš přes levé menu → Minihry.")
