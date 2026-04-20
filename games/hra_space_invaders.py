@@ -50,6 +50,13 @@ def _html_hry() -> str:
   document.addEventListener('mousedown', ensureAudio);
   document.addEventListener('keydown', ensureAudio);
   document.addEventListener('touchstart', ensureAudio);
+  // Enter na konci hry funguje i kdyz canvas nema focus
+  document.addEventListener('keydown', function(e){
+    if((state === 'gameover' || state === 'won') && e.code === 'Enter'){
+      e.preventDefault();
+      navigateToParent();
+    }
+  });
   try { ensureAudio(); } catch(e){}
 
   function tone(freq, dur, type='square', vol=0.08){
@@ -147,14 +154,9 @@ def _html_hry() -> str:
   canvas.tabIndex = 0;
   canvas.addEventListener('mousedown', (ev)=>{
     canvas.focus(); ensureAudio();
-    if((state === 'gameover' || state === 'won') && saveBtnRect){
-      const rect = canvas.getBoundingClientRect();
-      const mx = (ev.clientX - rect.left) * (W/rect.width);
-      const my = (ev.clientY - rect.top) * (H/rect.height);
-      if(mx >= saveBtnRect.x && mx <= saveBtnRect.x + saveBtnRect.w &&
-         my >= saveBtnRect.y && my <= saveBtnRect.y + saveBtnRect.h){
-        navigateToParent();
-      }
+    // Na konci hry jakekoli kliknuti mysi na canvasu spusti overeni skore
+    if(state === 'gameover' || state === 'won'){
+      navigateToParent();
     }
   });
   canvas.addEventListener('keydown', (e)=>{
@@ -604,75 +606,67 @@ def _render_koncovou_obrazovku(hra):
         unsafe_allow_html=True,
     )
 
-    patri = patri_do_zebricku(skore, "space")
-
     if ulozeno:
         st.success(
             f"✅ Uloženo do žebříčku jako **{jmeno_ulozene}** – skóre {skore} b."
         )
-    elif patri:
-        st.markdown(
-            f"""
-            <div style="
-                background: linear-gradient(135deg,#fff8cc 0%,#ffe69a 100%);
-                border: 2px solid #e8b800;
-                border-radius: 16px;
-                padding: 0.9rem 1.1rem;
-                text-align:center;
-                font-size: 1.15rem;
-                font-weight: 700;
-                color: #5b4600;
-                margin: 0.3rem auto 0.8rem auto;
-                max-width: 720px;
-            ">
-                🏆 Tvé skóre se dostalo do TOP {LIMIT_ZEBRICKU}! Zapiš si své jméno.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        with st.form("si_save_form", clear_on_submit=False):
-            jmeno = st.text_input(
-                f"Tvé jméno (max {MAX_JMENO_ZEBRICEK} znaků)",
-                max_chars=MAX_JMENO_ZEBRICEK,
-                key="si_jmeno_input",
-                placeholder="např. Tomík",
-            )
-            c1, c2 = st.columns(2)
-            with c1:
-                ulozit = st.form_submit_button(
-                    "💾 Uložit do žebříčku",
-                    use_container_width=True,
-                    type="primary",
-                )
-            with c2:
-                preskocit = st.form_submit_button(
-                    "Přeskočit",
-                    use_container_width=True,
-                )
-            if ulozit:
-                jm = zapis_do_zebricku(jmeno, skore, hvezdy, "space")
-                hra["ulozeno"] = True
-                hra["jmeno_ulozene"] = jm
-                st.session_state.space_invaders = hra
+        st.markdown("---")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🏆 Zobrazit žebříček", key="si_end_zebricek", use_container_width=True):
+                st.session_state.space_invaders = None
+                nastav_sekci("Žebříček miniher")
                 st.rerun()
-            if preskocit:
+        with c2:
+            if st.button("⬅️ Zpět na výběr her", key="si_end_back", use_container_width=True):
                 st.session_state.space_invaders = None
                 st.rerun()
-    else:
-        st.info("Tvé skóre se bohužel nevešlo do TOP 10. Zkus to znovu!")
+        return
 
-    st.markdown("---")
-    st.caption(
-        "👉 Novou hru spustíš přes levé menu (Minihry). "
-        "Tím předejdeš nechtěnému startu hry mezerníkem."
+    st.markdown(
+        f"""
+        <div style="
+            background: linear-gradient(135deg,#fff8cc 0%,#ffe69a 100%);
+            border: 2px solid #e8b800;
+            border-radius: 16px;
+            padding: 0.9rem 1.1rem;
+            text-align:center;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #5b4600;
+            margin: 0.3rem auto 0.8rem auto;
+            max-width: 720px;
+        ">
+            🏆 Tvé skóre se dostalo do TOP {LIMIT_ZEBRICKU}! Zapiš si své jméno.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("🏆 Zobrazit žebříček", key="si_end_zebricek", use_container_width=True):
-            st.session_state.space_invaders = None
-            nastav_sekci("Žebříček miniher")
+    with st.form("si_save_form", clear_on_submit=False):
+        jmeno = st.text_input(
+            f"Tvé jméno (max {MAX_JMENO_ZEBRICEK} znaků)",
+            max_chars=MAX_JMENO_ZEBRICEK,
+            key="si_jmeno_input",
+            placeholder="např. Tomík",
+        )
+        c1, c2 = st.columns(2)
+        with c1:
+            ulozit = st.form_submit_button(
+                "💾 Uložit do žebříčku",
+                use_container_width=True,
+                type="primary",
+            )
+        with c2:
+            preskocit = st.form_submit_button(
+                "Přeskočit",
+                use_container_width=True,
+            )
+        if ulozit:
+            jm = zapis_do_zebricku(jmeno, skore, hvezdy, "space")
+            hra["ulozeno"] = True
+            hra["jmeno_ulozene"] = jm
+            st.session_state.space_invaders = hra
             st.rerun()
-    with c2:
-        if st.button("⬅️ Zpět na výběr her", key="si_end_back", use_container_width=True):
+        if preskocit:
             st.session_state.space_invaders = None
             st.rerun()

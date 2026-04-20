@@ -1052,12 +1052,16 @@ def nastav_vzhled():
 
 
 def zpracuj_query_params():
-    """Zpracuje navrat z miniher (iframe ulozi skore pres URL)."""
+    """Zpracuje navrat z miniher (iframe ulozi skore pres URL).
+
+    Pravidlo: pokud score patri do TOP 10 -> zobraz formular pro jmeno.
+    Pokud nepatri -> skoc rovnou do vyberu miniher (bez mezistepu).
+    """
     params = st.query_params
     if params.get("si_finished") != "1":
         return
     # Pokud uz mame koncovou obrazovku nastavenou (napr. po rerun),
-    # jen vycisti URL a nech stavajici state byt (jinak bychom zresetovali ulozeno=False).
+    # jen vycisti URL a nech stavajici state byt.
     existing = st.session_state.get("space_invaders")
     if existing and existing.get("koncova_obrazovka"):
         try:
@@ -1074,21 +1078,26 @@ def zpracuj_query_params():
     except (TypeError, ValueError):
         hvezdy = 0
     vyhra = params.get("si_won") == "1"
+
+    if patri_do_zebricku(skore, "space"):
+        st.session_state.space_invaders = {
+            "aktivni": True,
+            "start_potvrzen": True,
+            "koncova_obrazovka": True,
+            "skore": skore,
+            "hvezdy": hvezdy,
+            "vyhra": vyhra,
+            "ulozeno": False,
+            "jmeno_ulozene": "",
+        }
+    else:
+        st.session_state.space_invaders = None
+
+    nastav_sekci("Minihry")
     try:
         st.query_params.clear()
     except Exception:
         pass
-    st.session_state.space_invaders = {
-        "aktivni": True,
-        "start_potvrzen": True,
-        "koncova_obrazovka": True,
-        "skore": skore,
-        "hvezdy": hvezdy,
-        "vyhra": vyhra,
-        "ulozeno": False,
-        "jmeno_ulozene": "",
-    }
-    nastav_sekci("Minihry")
 
 
 def main():
