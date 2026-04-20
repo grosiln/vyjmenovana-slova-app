@@ -498,15 +498,12 @@ def nastav_vzhled():
         .stApp {
             background: linear-gradient(180deg, #f8fbff 0%, #edf8ff 45%, #fff9ef 100%);
         }
-        .block-container {padding-top: 4.4rem; max-width: 1280px;}
-        @media (max-width: 900px) {
-            .block-container {padding-top: 5rem;}
-        }
+        .block-container {padding-top: 4.2rem; max-width: 1280px; padding-left: 2rem; padding-right: 2rem;}
         h1, h2, h3 {font-weight: 800 !important;}
-        h1 {font-size: 2.4rem !important;}
-        h2 {font-size: 1.8rem !important;}
-        p, li, label, .stMarkdown, .stAlert {font-size: 1.2rem !important; line-height: 1.5;}
-        [data-testid="stSidebar"] * {font-size: 1.08rem !important;}
+        h1 {font-size: clamp(1.7rem, 2.6vw, 2.45rem) !important;}
+        h2 {font-size: clamp(1.45rem, 2.2vw, 1.9rem) !important;}
+        p, li, label, .stMarkdown, .stAlert {font-size: clamp(1rem, 1.3vw, 1.2rem) !important; line-height: 1.5;}
+        [data-testid="stSidebar"] * {font-size: clamp(1rem, 1.1vw, 1.08rem) !important;}
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #5f7cff 0%, #6c63ff 100%);
             color: white;
@@ -518,9 +515,9 @@ def nastav_vzhled():
             color: #1f2937 !important;
         }
         .stButton > button {
-            font-size: 1.35rem !important;
+            font-size: clamp(1.05rem, 1.7vw, 1.35rem) !important;
             font-weight: 700 !important;
-            min-height: 3.3rem !important;
+            min-height: clamp(2.9rem, 6.5vh, 3.4rem) !important;
             border-radius: 14px !important;
             border: none !important;
             background: linear-gradient(90deg, #ff7eb6 0%, #ff9f5f 100%) !important;
@@ -546,10 +543,56 @@ def nastav_vzhled():
             box-shadow: 0 6px 14px rgba(40, 62, 120, 0.08);
         }
         .word-box {
-            font-size: 2rem;
+            font-size: clamp(1.45rem, 3.4vw, 2.1rem);
             text-align: center;
             border: 3px solid #9ec5ff;
             background: #f4f9ff;
+        }
+        /* Tablet */
+        @media (max-width: 1024px) {
+            .block-container {
+                padding-top: 3.8rem;
+                padding-left: 1.2rem;
+                padding-right: 1.2rem;
+            }
+            .feature-card, .letter-card, .word-box {
+                border-radius: 14px;
+                padding: 0.8rem 0.85rem;
+            }
+        }
+        /* Mobil */
+        @media (max-width: 768px) {
+            .block-container {
+                padding-top: 3.2rem;
+                padding-left: 0.8rem;
+                padding-right: 0.8rem;
+            }
+            [data-testid="stSidebar"] {
+                min-width: 78vw !important;
+                max-width: 82vw !important;
+            }
+            .stButton > button {
+                min-height: 3.2rem !important;
+                border-radius: 12px !important;
+            }
+            .hero-box {padding: 0.9rem 1rem;}
+            .word-box {
+                border-width: 2px;
+                border-radius: 12px;
+                padding: 0.6rem 0.5rem;
+            }
+        }
+        /* Velmi malé displeje */
+        @media (max-width: 480px) {
+            .block-container {
+                padding-top: 2.6rem;
+                padding-left: 0.55rem;
+                padding-right: 0.55rem;
+            }
+            h1 {letter-spacing: 0.1px;}
+            .hero-box, .feature-card, .letter-card, .word-box {
+                margin-bottom: 0.55rem;
+            }
         }
         </style>
         """,
