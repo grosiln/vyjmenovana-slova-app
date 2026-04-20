@@ -346,7 +346,12 @@ def main():
     init_state()
 
     st.sidebar.title("Menu")
-    st.sidebar.radio("Sekce", ["Domu", "Prehled slov", "Statistiky", "Test"], key="sekce")
+    sekce_options = ["Domu", "Prehled slov", "Statistiky", "Test"]
+    if st.session_state.sekce not in sekce_options:
+        st.session_state.sekce = "Domu"
+    sekce_index = sekce_options.index(st.session_state.sekce)
+    sekce = st.sidebar.radio("Sekce", sekce_options, index=sekce_index)
+    st.session_state.sekce = sekce
 
     st.sidebar.divider()
     vyber = st.sidebar.selectbox("Pismeno pro test", PISMENA, index=0)
