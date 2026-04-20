@@ -346,20 +346,6 @@ def render_domu():
         st.session_state.menu_sekce = "Přehled slov"
         st.rerun()
 
-    dnes = dnesni_skore()
-    st.markdown("### 🗓️ Dnešní skóre")
-    d1, d2, d3, d4 = st.columns(4)
-    d1.metric("Testů dnes", dnes["pocet_testu"])
-    d2.metric("Otázek dnes", dnes["otazek"])
-    d3.metric("Správně dnes", dnes["spravne"])
-    d4.metric("Úspěšnost dnes", f"{dnes['uspesnost']} %")
-    hvezdy, chybi = hvezdicky_za_spravne(dnes["spravne"])
-    st.markdown(f"### ⭐ Hvězdičky dnes: {text_hvezdicek(hvezdy)}")
-    if chybi > 0:
-        st.caption(f"Do další hvězdičky chybí už jen {chybi} správných odpovědí.")
-    else:
-        st.caption("Skvělé! Zrovna jsi získal(a) další hvězdičku.")
-
     st.info("💡 Tip: Nejdřív otevři Přehled slov, pak spusť test.")
 
 
@@ -475,6 +461,36 @@ def render_statistiky():
         st.rerun()
 
 
+def render_dnesni_skore():
+    st.header("🗓️ Dnešní skóre")
+    dnes = dnesni_skore()
+
+    d1, d2, d3, d4 = st.columns(4)
+    d1.metric("Testů dnes", dnes["pocet_testu"])
+    d2.metric("Otázek dnes", dnes["otazek"])
+    d3.metric("Správně dnes", dnes["spravne"])
+    d4.metric("Úspěšnost dnes", f"{dnes['uspesnost']} %")
+
+    hvezdy, chybi = hvezdicky_za_spravne(dnes["spravne"])
+    st.markdown(f"### ⭐ Hvězdičky dnes: {text_hvezdicek(hvezdy)}")
+    if chybi > 0:
+        st.caption(f"Do další hvězdičky chybí už jen {chybi} správných odpovědí.")
+    else:
+        st.caption("Skvělé! Zrovna jsi získal(a) další hvězdičku.")
+
+    c1, c2 = st.columns(2)
+    if c1.button("📝 Spustit Doplň i/y", use_container_width=True):
+        priprav_test_iy("Všechna")
+        st.session_state.sekce = "Test"
+        st.session_state.menu_sekce = "Test"
+        st.rerun()
+    if c2.button("🔎 Spustit Poznávačku", use_container_width=True):
+        priprav_poznavacku("Všechna")
+        st.session_state.sekce = "Test"
+        st.session_state.menu_sekce = "Test"
+        st.rerun()
+
+
 def nastav_vzhled():
     st.markdown(
         """
@@ -548,7 +564,7 @@ def main():
     nastav_vzhled()
 
     st.sidebar.title("🎯 Menu aplikace")
-    sekce_options = ["Domů", "Přehled slov", "Statistiky", "Test"]
+    sekce_options = ["Domů", "Dnešní skóre", "Přehled slov", "Statistiky", "Test"]
     if st.session_state.menu_sekce not in sekce_options:
         st.session_state.menu_sekce = "Domů"
     if st.session_state.sekce not in sekce_options:
@@ -572,6 +588,8 @@ def main():
 
     if st.session_state.sekce == "Domů":
         render_domu()
+    elif st.session_state.sekce == "Dnešní skóre":
+        render_dnesni_skore()
     elif st.session_state.sekce == "Přehled slov":
         render_prehled()
     elif st.session_state.sekce == "Statistiky":
