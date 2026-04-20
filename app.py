@@ -847,10 +847,10 @@ def nastav_vzhled():
         /* Nadpisy s dostatkem mista pro ceskou diakritiku (hacky, carky) */
         h1, h2, h3, h4 {
             font-weight: 800 !important;
-            line-height: 1.5 !important;
-            padding-top: 0.25em !important;
-            padding-bottom: 0.1em !important;
-            margin-top: 0.35em !important;
+            line-height: 1.75 !important;
+            padding-top: 0.55em !important;
+            padding-bottom: 0.2em !important;
+            margin-top: 0.5em !important;
             overflow: visible !important;
         }
         h1 {font-size: clamp(1.7rem, 2.6vw, 2.45rem) !important;}
