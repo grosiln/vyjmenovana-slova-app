@@ -399,7 +399,10 @@ def nastav_vzhled():
         .stApp {
             background: linear-gradient(180deg, #f8fbff 0%, #edf8ff 45%, #fff9ef 100%);
         }
-        .block-container {padding-top: 1.2rem; max-width: 1280px;}
+        .block-container {padding-top: 4.4rem; max-width: 1280px;}
+        @media (max-width: 900px) {
+            .block-container {padding-top: 5rem;}
+        }
         h1, h2, h3 {font-weight: 800 !important;}
         h1 {font-size: 2.4rem !important;}
         h2 {font-size: 1.8rem !important;}
