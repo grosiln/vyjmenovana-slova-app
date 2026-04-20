@@ -243,6 +243,8 @@ def init_state():
         st.session_state.sekce = "Domů"
     if "menu_sekce" not in st.session_state:
         st.session_state.menu_sekce = st.session_state.sekce
+    if "menu_sekce_widget" not in st.session_state:
+        st.session_state.menu_sekce_widget = st.session_state.menu_sekce
     if "test" not in st.session_state:
         st.session_state.test = None
     if "vyber_pismeno" not in st.session_state:
@@ -935,6 +937,10 @@ def main():
         st.session_state.menu_sekce = "Domů"
     if st.session_state.sekce not in sekce_options:
         st.session_state.sekce = "Domů"
+    if st.session_state.menu_sekce_widget not in sekce_options:
+        st.session_state.menu_sekce_widget = st.session_state.menu_sekce
+    elif st.session_state.menu_sekce_widget != st.session_state.menu_sekce:
+        st.session_state.menu_sekce_widget = st.session_state.menu_sekce
 
     st.sidebar.markdown("### 🎮 Spuštění testu")
     vyber = st.sidebar.selectbox("Písmeno pro test", PISMENA, key="vyber_pismeno")
@@ -949,7 +955,8 @@ def main():
         st.session_state.menu_sekce = "Test"
         st.rerun()
 
-    st.sidebar.radio("Sekce", sekce_options, key="menu_sekce")
+    st.sidebar.radio("Sekce", sekce_options, key="menu_sekce_widget")
+    st.session_state.menu_sekce = st.session_state.menu_sekce_widget
     st.session_state.sekce = st.session_state.menu_sekce
 
     if st.session_state.sekce == "Domů":
