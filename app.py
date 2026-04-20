@@ -5,10 +5,6 @@ from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
-from games.hra_space_invaders import (
-    render_hru as render_hru_space,
-    spustit_hru as spustit_hru_space,
-)
 
 
 SOUBOR_STATISTIK = Path("statistiky_vyjmenovana_slova.json")
@@ -167,19 +163,12 @@ def prazdne_statistiky():
 
 def nacti_statistiky():
     if not SOUBOR_STATISTIK.exists():
-        data = prazdne_statistiky()
-        data["hvezdy_utracene"] = 0
-        return data
+        return prazdne_statistiky()
     try:
         with SOUBOR_STATISTIK.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-            if "hvezdy_utracene" not in data:
-                data["hvezdy_utracene"] = 0
-            return data
+            return json.load(f)
     except Exception:
-        data = prazdne_statistiky()
-        data["hvezdy_utracene"] = 0
-        return data
+        return prazdne_statistiky()
 
 
 def uloz_statistiky(data):
@@ -212,95 +201,6 @@ def ziskane_hvezdy_celkem():
     return data.get("spravne", 0) // 10
 
 
-def dostupne_hvezdy():
-    data = nacti_statistiky()
-    ziskane = data.get("spravne", 0) // 10
-    utracene = data.get("hvezdy_utracene", 0)
-    return max(0, ziskane - utracene)
-
-
-def utrat_hvezdy(pocet):
-    data = nacti_statistiky()
-    ziskane = data.get("spravne", 0) // 10
-    utracene = data.get("hvezdy_utracene", 0)
-    dostupne = max(0, ziskane - utracene)
-    if dostupne < pocet:
-        return False
-    data["hvezdy_utracene"] = utracene + pocet
-    uloz_statistiky(data)
-    return True
-
-
-def pridej_test_hvezdy(pocet_hvezd):
-    """Navysi pocet spravnych odpovedi tak, aby pribyly hvezdicky pro testovani miniher."""
-    if pocet_hvezd <= 0:
-        return
-    data = nacti_statistiky()
-    data["spravne"] = data.get("spravne", 0) + (pocet_hvezd * 10)
-    uloz_statistiky(data)
-
-
-def vynuluj_utracene_hvezdy():
-    data = nacti_statistiky()
-    data["hvezdy_utracene"] = 0
-    uloz_statistiky(data)
-
-
-MAX_JMENO_ZEBRICEK = 12
-LIMIT_ZEBRICKU = 10
-
-# Zaznam her, ktere maji svuj zebricek. Dalsi hry staci pridat sem,
-# render_zebricek() je automaticky zobrazi jako zalozky.
-HRY_SE_ZEBRICKEM = [
-    {"klic": "space", "nazev": "👾 Space Invaders"},
-    # Pripraveno pro dalsi dve hry, az je dopiseme:
-    # {"klic": "hra2", "nazev": "..."},
-    # {"klic": "hra3", "nazev": "..."},
-]
-
-
-def ziskej_zebricek(hra="space"):
-    data = nacti_statistiky()
-    zeb = data.get(f"zebricek_{hra}", [])
-    zeb = sorted(zeb, key=lambda z: (-int(z.get("skore", 0)), z.get("datum", "")))
-    return zeb[:LIMIT_ZEBRICKU]
-
-
-def patri_do_zebricku(skore, hra="space"):
-    if skore <= 0:
-        return False
-    zeb = ziskej_zebricek(hra)
-    if len(zeb) < LIMIT_ZEBRICKU:
-        return True
-    nejhorsi = min(int(z.get("skore", 0)) for z in zeb)
-    return skore > nejhorsi
-
-
-def zapis_do_zebricku(jmeno, skore, hvezdy, hra="space"):
-    jmeno_cist = (jmeno or "").strip()[:MAX_JMENO_ZEBRICEK] or "Anonym"
-    data = nacti_statistiky()
-    klic = f"zebricek_{hra}"
-    zeb = list(data.get(klic, []))
-    zeb.append(
-        {
-            "jmeno": jmeno_cist,
-            "skore": int(skore),
-            "hvezdy": int(hvezdy),
-            "datum": datetime.now().strftime("%d.%m.%Y %H:%M"),
-        }
-    )
-    zeb.sort(key=lambda z: (-int(z.get("skore", 0)), z.get("datum", "")))
-    data[klic] = zeb[:LIMIT_ZEBRICKU]
-    uloz_statistiky(data)
-    return jmeno_cist
-
-
-def vymaz_zebricek(hra="space"):
-    data = nacti_statistiky()
-    data[f"zebricek_{hra}"] = []
-    uloz_statistiky(data)
-
-
 def init_state():
     if "sekce" not in st.session_state:
         st.session_state.sekce = "Domů"
@@ -312,14 +212,6 @@ def init_state():
         st.session_state.test = None
     if "vyber_pismeno" not in st.session_state:
         st.session_state.vyber_pismeno = "Všechna"
-    if "space_invaders" not in st.session_state:
-        st.session_state.space_invaders = None
-    if "arcade" not in st.session_state:
-        st.session_state.arcade = None
-    if "semafor" not in st.session_state:
-        st.session_state.semafor = None
-    if "lov_barev" not in st.session_state:
-        st.session_state.lov_barev = None
 
 
 def nastav_sekci(cil):
@@ -621,15 +513,6 @@ def render_statistiky():
     st.markdown(f"### Aktuální odznak: {odznak_za_uspesnost(usp)}")
     hvezdy_celkem, chybi_celkem = hvezdicky_za_spravne(spravne)
     st.markdown(f"### ⭐ Celkem: {text_hvezdicek(hvezdy_celkem)}")
-    st.markdown(
-        f"""
-        <div class="star-counter-box">
-            <div class="star-label">⭐ Dostupné pro minihry</div>
-            <div class="star-number">{dostupne_hvezdy()}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
     if chybi_celkem > 0:
         st.caption(f"Do další hvězdičky chybí {chybi_celkem} správných odpovědí.")
     else:
@@ -651,137 +534,6 @@ def render_statistiky():
         priprav_test_iy("Všechna")
         nastav_sekci("Test")
         st.rerun()
-
-
-def render_minihry():
-    if st.session_state.space_invaders and st.session_state.space_invaders.get("aktivni"):
-        render_hru_space()
-        return
-
-    st.header("🎮 Minihry - odměna")
-    st.write("Tady se už neučíš. Tady si jen hraješ.")
-
-    ziskane = ziskane_hvezdy_celkem()
-    dostupne = dostupne_hvezdy()
-    st.markdown(
-        f"""
-        <div class="star-row">
-            <div class="star-counter-box">
-                <div class="star-label">⭐ Získané celkem</div>
-                <div class="star-number">{ziskane}</div>
-            </div>
-            <div class="star-counter-box">
-                <div class="star-label">⭐ Dostupné teď</div>
-                <div class="star-number">{dostupne}</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    with st.expander("🧪 Testovací hvězdičky (pro vývoj)", expanded=False):
-        st.caption("Rychlé přidání hvězdiček jen pro test miniher.")
-        t1, t2, t3 = st.columns(3)
-        if t1.button("+5 ⭐", key="test_plus_5", use_container_width=True):
-            pridej_test_hvezdy(5)
-            st.success("Přidáno 5 hvězdiček pro testování.")
-            st.rerun()
-        if t2.button("+20 ⭐", key="test_plus_20", use_container_width=True):
-            pridej_test_hvezdy(20)
-            st.success("Přidáno 20 hvězdiček pro testování.")
-            st.rerun()
-        if t3.button("Obnovit utracené", key="test_reset_spent", use_container_width=True):
-            vynuluj_utracene_hvezdy()
-            st.success("Utracené hvězdičky byly vynulovány.")
-            st.rerun()
-
-    st.markdown("### Vyber minihru")
-    st.markdown(
-        """
-        <div class="feature-card">
-            <h3>👾 Space Invaders</h3>
-            <p>
-                Jednoduchá klasika - ovládej raketku šipkami a stříle mezerníkem.<br>
-                Ničte mimozemšťany a sestřelujte padající hvězdičky jako bonus.<br>
-                Cena: ⭐⭐⭐
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.button("Hrát: Space Invaders (3 ⭐)", key="menu_space", use_container_width=True):
-        if utrat_hvezdy(3):
-            spustit_hru_space()
-            st.rerun()
-        else:
-            st.error("Nemáš dost hvězdiček.")
-
-    st.info("Hry jsou odměna za trénink. Za každých 10 správných odpovědí získáš 1 hvězdičku.")
-
-
-def _render_tabulka_zebricku(klic_hry, nazev_hry):
-    zebricek = ziskej_zebricek(klic_hry)
-    st.markdown(f"#### {nazev_hry} — TOP {LIMIT_ZEBRICKU}")
-
-    if not zebricek:
-        st.info("Zatím nikdo není v žebříčku této hry.")
-    else:
-        radky = ""
-        for i, z in enumerate(zebricek, start=1):
-            if i == 1:
-                medaile = "🥇"
-            elif i == 2:
-                medaile = "🥈"
-            elif i == 3:
-                medaile = "🥉"
-            else:
-                medaile = f"{i}."
-            jmeno = str(z.get("jmeno", "?"))[:MAX_JMENO_ZEBRICEK]
-            skore = int(z.get("skore", 0))
-            hvezdy = int(z.get("hvezdy", 0))
-            datum = str(z.get("datum", ""))
-            radky += f"""
-                <div class="lb-row lb-rank-{i}">
-                    <div class="lb-rank">{medaile}</div>
-                    <div class="lb-name">{jmeno}</div>
-                    <div class="lb-score">{skore} b.</div>
-                    <div class="lb-stars">⭐ {hvezdy}</div>
-                    <div class="lb-date">{datum}</div>
-                </div>
-            """
-
-        st.markdown(
-            f"""
-            <div class="lb-wrap">
-                <div class="lb-head">
-                    <div class="lb-rank">#</div>
-                    <div class="lb-name">Jméno</div>
-                    <div class="lb-score">Skóre</div>
-                    <div class="lb-stars">Hvězdy</div>
-                    <div class="lb-date">Datum</div>
-                </div>
-                {radky}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-def render_zebricek():
-    st.header("🏆 Žebříček miniher")
-    st.caption("Hru pustíš přes levé menu → Minihry.")
-
-    if not HRY_SE_ZEBRICKEM:
-        st.info("Zatím není žádná hra.")
-        return
-
-    if len(HRY_SE_ZEBRICKEM) == 1:
-        hra = HRY_SE_ZEBRICKEM[0]
-        _render_tabulka_zebricku(hra["klic"], hra["nazev"])
-    else:
-        nazvy = [h["nazev"] for h in HRY_SE_ZEBRICKEM]
-        zalozky = st.tabs(nazvy)
-        for zalozka, hra in zip(zalozky, HRY_SE_ZEBRICKEM):
-            with zalozka:
-                _render_tabulka_zebricku(hra["klic"], hra["nazev"])
 
 
 def render_dnesni_skore():
@@ -910,32 +662,6 @@ def nastav_vzhled():
             margin-bottom: 0.7rem;
             box-shadow: 0 6px 14px rgba(40, 62, 120, 0.08);
         }
-        .star-row {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.9rem;
-            margin-bottom: 0.9rem;
-        }
-        .star-counter-box {
-            background: linear-gradient(135deg, #fff7d1 0%, #ffe9a3 100%);
-            border: 2px solid #ffd76a;
-            border-radius: 16px;
-            padding: 0.8rem 1rem;
-            margin-bottom: 0.7rem;
-            box-shadow: 0 6px 14px rgba(120, 96, 20, 0.1);
-        }
-        .star-label {
-            font-size: clamp(1rem, 1.3vw, 1.22rem);
-            font-weight: 800;
-            color: #5b4600;
-            margin-bottom: 0.2rem;
-        }
-        .star-number {
-            font-size: clamp(1.9rem, 3.6vw, 2.7rem);
-            font-weight: 900;
-            color: #3f2f00;
-            line-height: 1.05;
-        }
         .word-box {
             font-size: clamp(1.45rem, 3.4vw, 2.1rem);
             text-align: center;
@@ -944,47 +670,6 @@ def nastav_vzhled():
             line-height: 1.5 !important;
             padding-top: 0.5rem !important;
             padding-bottom: 0.5rem !important;
-        }
-        .lb-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 0.45rem;
-            margin: 0.6rem 0 1rem 0;
-        }
-        .lb-head, .lb-row {
-            display: grid;
-            grid-template-columns: 56px 1fr 110px 90px 150px;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.55rem 0.85rem;
-            border-radius: 12px;
-            background: white;
-            border: 2px solid #d8e3ff;
-            box-shadow: 0 4px 10px rgba(40, 62, 120, 0.06);
-            font-size: clamp(0.98rem, 1.25vw, 1.15rem);
-        }
-        .lb-head {
-            background: #eef3ff;
-            font-weight: 800;
-            color: #334;
-            border-color: #b8c9ff;
-        }
-        .lb-row .lb-rank {font-size: 1.35rem; font-weight: 900; text-align: center;}
-        .lb-row .lb-name {font-weight: 800; color: #1f2640; word-break: break-word;}
-        .lb-row .lb-score {font-weight: 800; color: #2e7d32; text-align: right;}
-        .lb-row .lb-stars {font-weight: 700; color: #8a6d00; text-align: right;}
-        .lb-row .lb-date {color: #556; font-size: 0.92em; text-align: right;}
-        .lb-rank-1 {background: linear-gradient(90deg,#fff5cc 0%,#ffe17a 100%); border-color:#e8b800;}
-        .lb-rank-2 {background: linear-gradient(90deg,#f1f3f7 0%,#d2d8e0 100%); border-color:#9aa3b0;}
-        .lb-rank-3 {background: linear-gradient(90deg,#ffe4cf 0%,#ffbe8a 100%); border-color:#cf7b3a;}
-        @media (max-width: 768px) {
-            .lb-head, .lb-row {
-                grid-template-columns: 42px 1fr 70px 60px;
-                gap: 0.4rem;
-                padding: 0.5rem 0.6rem;
-                font-size: 0.95rem;
-            }
-            .lb-head .lb-date, .lb-row .lb-date { display: none; }
         }
         .hint-emoji-box {
             font-size: clamp(2.2rem, 5vw, 3.4rem);
@@ -1026,7 +711,6 @@ def nastav_vzhled():
                 border-radius: 12px !important;
             }
             .hero-box {padding: 0.9rem 1rem;}
-            .star-row {grid-template-columns: 1fr;}
             .word-box {
                 border-width: 2px;
                 border-radius: 12px;
@@ -1051,61 +735,11 @@ def nastav_vzhled():
     )
 
 
-def zpracuj_query_params():
-    """Zpracuje navrat z miniher (iframe ulozi skore pres URL).
-
-    Pravidlo: pokud score patri do TOP 10 -> zobraz formular pro jmeno.
-    Pokud nepatri -> skoc rovnou do vyberu miniher (bez mezistepu).
-    """
-    params = st.query_params
-    if params.get("si_finished") != "1":
-        return
-    # Pokud uz mame koncovou obrazovku nastavenou (napr. po rerun),
-    # jen vycisti URL a nech stavajici state byt.
-    existing = st.session_state.get("space_invaders")
-    if existing and existing.get("koncova_obrazovka"):
-        try:
-            st.query_params.clear()
-        except Exception:
-            pass
-        return
-    try:
-        skore = int(params.get("si_score", "0"))
-    except (TypeError, ValueError):
-        skore = 0
-    try:
-        hvezdy = int(params.get("si_stars", "0"))
-    except (TypeError, ValueError):
-        hvezdy = 0
-    vyhra = params.get("si_won") == "1"
-
-    if patri_do_zebricku(skore, "space"):
-        st.session_state.space_invaders = {
-            "aktivni": True,
-            "start_potvrzen": True,
-            "koncova_obrazovka": True,
-            "skore": skore,
-            "hvezdy": hvezdy,
-            "vyhra": vyhra,
-            "ulozeno": False,
-            "jmeno_ulozene": "",
-        }
-    else:
-        st.session_state.space_invaders = None
-
-    nastav_sekci("Minihry")
-    try:
-        st.query_params.clear()
-    except Exception:
-        pass
-
-
 def main():
     random.seed()
     st.set_page_config(page_title="Vyjmenovaná slova", page_icon="📘", layout="wide")
     init_state()
     nastav_vzhled()
-    zpracuj_query_params()
 
     st.sidebar.title("🎯 Menu aplikace")
     sekce_options = [
@@ -1114,8 +748,6 @@ def main():
         "Přehled slov",
         "Statistiky",
         "Test",
-        "Minihry",
-        "Žebříček miniher",
     ]
     if st.session_state.menu_sekce not in sekce_options:
         nastav_sekci("Domů")
@@ -1139,9 +771,6 @@ def main():
     st.session_state.menu_sekce = st.session_state.menu_sekce_widget
     st.session_state.sekce = st.session_state.menu_sekce
 
-    if st.session_state.sekce != "Minihry" and st.session_state.space_invaders:
-        st.session_state.space_invaders = None
-
     if st.session_state.sekce == "Domů":
         render_domu()
     elif st.session_state.sekce == "Dnešní skóre":
@@ -1150,10 +779,6 @@ def main():
         render_prehled()
     elif st.session_state.sekce == "Statistiky":
         render_statistiky()
-    elif st.session_state.sekce == "Minihry":
-        render_minihry()
-    elif st.session_state.sekce == "Žebříček miniher":
-        render_zebricek()
     else:
         if st.session_state.test is None:
             st.info("Zatím nemáš aktivní test. Spusť ho tady nebo v levém panelu.")
