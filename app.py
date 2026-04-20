@@ -238,27 +238,74 @@ def vyhodnot(odpoved):
     st.session_state.test = test
 
 
+def zprava_za_vysledek(uspesnost):
+    if uspesnost >= 90:
+        return "🌟 Jsi hvězda pravopisu! Jen tak dál!"
+    if uspesnost >= 75:
+        return "👏 Paráda! Ještě pár kol a bude to úplně top."
+    return "💪 Nic se neděje, trénink dělá mistra. Zkus další kolo!"
+
+
 def render_domu():
-    st.header("Vyjmenovaná slova")
-    st.write("Program pro výuku vyjmenovaných slov pro 2. a 3. třídu.")
     st.markdown(
-        "\n".join(
-            [
-                "- Přehled vyjmenovaných slov po B, L, M, P, S, V, Z",
-                "- Cvičení: Doplň i/y",
-                "- Poznávačka: vyjmenované vs. nevyjmenované slovo",
-                "- Ukládání výsledků (statistiky)",
-            ]
-        )
+        """
+        <div class="hero-box">
+            <h1>🎒 Vyjmenovaná slova hrou</h1>
+            <p>
+                Vítej! Tady si procvičíš vyjmenovaná slova zábavně a bez stresu.
+                Aplikace je připravená pro 2. a 3. třídu.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    st.info("Tip: Nejdřív otevři Přehled slov, pak spusť test.")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>🧠 Co umím</h3>
+                <p>
+                    • Přehled vyjmenovaných slov<br>
+                    • Cvičení Doplň i/y<br>
+                    • Poznávačku slov<br>
+                    • Statistiky tvého pokroku
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with c2:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>🚀 Jak začít</h3>
+                <p>
+                    1) Vyber v levém menu písmeno.<br>
+                    2) Spusť test.<br>
+                    3) Sbírej body a sleduj, jak se zlepšuješ!
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.info("💡 Tip: Nejdřív otevři Přehled slov, pak spusť test.")
 
 
 def render_prehled():
-    st.header("Přehled vyjmenovaných slov")
+    st.header("📚 Přehled vyjmenovaných slov")
     for p in ["B", "L", "M", "P", "S", "V", "Z"]:
-        st.subheader(f"Po {p}")
-        st.write(", ".join(VYJMENOVANA[p]))
+        st.markdown(
+            f"""
+            <div class="letter-card">
+                <h3>Po {p}</h3>
+                <p>{", ".join(VYJMENOVANA[p])}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def render_test():
@@ -272,41 +319,43 @@ def render_test():
         uspesnost = round((test["spravne"] / celkem) * 100, 1) if celkem else 0.0
         pridej_vysledek(celkem, test["spravne"], test["spatne"], test["nazev"])
 
-        st.header("Výsledek testu")
-        st.write(f"Otázek: {celkem}")
-        st.write(f"Správně: {test['spravne']}")
-        st.write(f"Špatně: {test['spatne']}")
-        st.write(f"Úspěšnost: {uspesnost} %")
-        st.success("Výborně!" if uspesnost >= 85 else "Dobrá práce, trénuj dál.")
+        st.header("🏁 Výsledek testu")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Otázek", celkem)
+        c2.metric("Správně", test["spravne"])
+        c3.metric("Úspěšnost", f"{uspesnost} %")
+        st.success(zprava_za_vysledek(uspesnost))
         if st.button("Nová sada otázek"):
             st.session_state.test = None
             st.session_state.sekce = "Domů"
+            st.session_state.menu_sekce = "Domů"
             st.rerun()
         return
 
     slovo, _ = test["otazky"][test["idx"]]
     progress = f"{test['idx'] + 1}/{len(test['otazky'])}"
+    st.progress(test["idx"] / len(test["otazky"]), text=f"Průběh testu: {progress}")
 
     if test["typ"] == "iy":
         maska, _ = maskuj_i_y(slovo)
-        st.header(f"Doplň i/y ({progress})")
-        st.subheader(f"Slovo: {maska}")
+        st.header(f"📝 Doplň i/y ({progress})")
+        st.markdown(f"<div class='word-box'>Slovo: <b>{maska}</b></div>", unsafe_allow_html=True)
         c1, c2 = st.columns(2)
-        if c1.button("i", use_container_width=True):
+        if c1.button("🔵 i", use_container_width=True):
             vyhodnot("i")
             st.rerun()
-        if c2.button("y", use_container_width=True):
+        if c2.button("🟣 y", use_container_width=True):
             vyhodnot("y")
             st.rerun()
     else:
-        st.header(f"Poznávačka ({progress})")
-        st.subheader(f"Slovo: {slovo}")
+        st.header(f"🔎 Poznávačka ({progress})")
+        st.markdown(f"<div class='word-box'>Slovo: <b>{slovo}</b></div>", unsafe_allow_html=True)
         st.write("Je to vyjmenované nebo odvozené slovo?")
         c1, c2 = st.columns(2)
-        if c1.button("V = vyjmenované", use_container_width=True):
+        if c1.button("✅ V = vyjmenované", use_container_width=True):
             vyhodnot("V")
             st.rerun()
-        if c2.button("N = nevyjmenované", use_container_width=True):
+        if c2.button("❌ N = nevyjmenované", use_container_width=True):
             vyhodnot("N")
             st.rerun()
 
@@ -318,17 +367,18 @@ def render_test():
 
 
 def render_statistiky():
-    st.header("Statistiky")
+    st.header("📊 Statistiky")
     data = nacti_statistiky()
     celkem = data.get("celkem", 0)
     spravne = data.get("spravne", 0)
     spatne = data.get("spatne", 0)
     usp = round((spravne / celkem) * 100, 1) if celkem else 0.0
 
-    st.write(f"Celkem otázek: {celkem}")
-    st.write(f"Celkem správně: {spravne}")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Celkem otázek", celkem)
+    c2.metric("Celkem správně", spravne)
+    c3.metric("Úspěšnost", f"{usp} %")
     st.write(f"Celkem špatně: {spatne}")
-    st.write(f"Dlouhodobá úspěšnost: {usp} %")
 
     historie = list(reversed(data.get("historie", [])))
     if historie:
@@ -346,19 +396,56 @@ def nastav_vzhled():
     st.markdown(
         """
         <style>
-        .block-container {padding-top: 1.2rem; max-width: 1100px;}
+        .stApp {
+            background: linear-gradient(180deg, #f8fbff 0%, #edf8ff 45%, #fff9ef 100%);
+        }
+        .block-container {padding-top: 1.2rem; max-width: 1280px;}
         h1, h2, h3 {font-weight: 800 !important;}
-        h1 {font-size: 2.2rem !important;}
+        h1 {font-size: 2.4rem !important;}
         h2 {font-size: 1.8rem !important;}
         p, li, label, .stMarkdown, .stAlert {font-size: 1.2rem !important; line-height: 1.5;}
         [data-testid="stSidebar"] * {font-size: 1.08rem !important;}
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #5f7cff 0%, #6c63ff 100%);
+            color: white;
+        }
+        [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] div {
+            color: white !important;
+        }
         .stButton > button {
             font-size: 1.35rem !important;
             font-weight: 700 !important;
             min-height: 3.3rem !important;
-            border-radius: 12px !important;
+            border-radius: 14px !important;
+            border: none !important;
+            background: linear-gradient(90deg, #ff7eb6 0%, #ff9f5f 100%) !important;
+            color: #14213d !important;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
         }
+        .stButton > button:hover {filter: brightness(1.05);}
         .stRadio label p {font-size: 1.18rem !important; font-weight: 600 !important;}
+        .hero-box {
+            background: linear-gradient(135deg, #6a89ff 0%, #ff7eb6 100%);
+            color: white;
+            padding: 1.2rem 1.4rem;
+            border-radius: 18px;
+            margin-bottom: 1rem;
+        }
+        .hero-box h1 {margin: 0 0 0.4rem 0; color: white;}
+        .feature-card, .letter-card, .word-box {
+            background: white;
+            border: 2px solid #d8e3ff;
+            border-radius: 16px;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.7rem;
+            box-shadow: 0 6px 14px rgba(40, 62, 120, 0.08);
+        }
+        .word-box {
+            font-size: 2rem;
+            text-align: center;
+            border: 3px solid #9ec5ff;
+            background: #f4f9ff;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -371,14 +458,14 @@ def main():
     init_state()
     nastav_vzhled()
 
-    st.sidebar.title("Menu aplikace")
+    st.sidebar.title("🎯 Menu aplikace")
     sekce_options = ["Domů", "Přehled slov", "Statistiky", "Test"]
     if st.session_state.menu_sekce not in sekce_options:
         st.session_state.menu_sekce = "Domů"
     if st.session_state.sekce not in sekce_options:
         st.session_state.sekce = "Domů"
 
-    st.sidebar.divider()
+    st.sidebar.markdown("### 🎮 Spuštění testu")
     vyber = st.sidebar.selectbox("Písmeno pro test", PISMENA, index=0)
     if st.sidebar.button("Spustit test Doplň i/y", use_container_width=True):
         priprav_test_iy(vyber)
