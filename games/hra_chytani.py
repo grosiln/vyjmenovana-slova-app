@@ -1,4 +1,5 @@
 import random
+import time
 
 import streamlit as st
 
@@ -13,6 +14,8 @@ def spustit_hru(zivoty: int, kola: int):
         "skore": 0,
         "cil": random.randint(0, 8),
         "hotovo": False,
+        "posledni_akce_cas": time.time(),
+        "feedback": "",
     }
 
 
@@ -24,6 +27,7 @@ def _dalsi_kolo():
         hra["aktivni"] = False
     else:
         hra["cil"] = random.randint(0, 8)
+    hra["posledni_akce_cas"] = time.time()
     st.session_state.arcade = hra
 
 
@@ -33,8 +37,21 @@ def klik_policko(index: int):
         return
     if index == hra["cil"]:
         hra["skore"] += 1
+        hra["feedback"] = "Správně! ⭐"
     else:
         hra["zivoty"] -= 1
+        hra["feedback"] = "Netrefa. Život ubývá jen za špatný klik."
+    st.session_state.arcade = hra
+    _dalsi_kolo()
+
+
+def _zpracuj_timeout():
+    hra = st.session_state.arcade
+    if hra["hotovo"]:
+        return
+    if time.time() - hra.get("posledni_akce_cas", 0) < 2:
+        return
+    hra["feedback"] = "Hvězdička utekla na jiné políčko. Bez ztráty života."
     st.session_state.arcade = hra
     _dalsi_kolo()
 
@@ -45,7 +62,13 @@ def render_hru():
         return
 
     st.header("🕹️ Chytání hvězdiček")
-    st.write("Klikni co nejrychleji na hvězdičku. Když mineš, ztratíš život.")
+    st.write("Klikni co nejrychleji na hvězdičku. Po 2 sekundách uteče jinam bez ztráty života.")
+    if hasattr(st, "autorefresh"):
+        st.autorefresh(interval=500, key="arcade_auto_refresh")
+    _zpracuj_timeout()
+    hra = st.session_state.get("arcade")
+    if not hra:
+        return
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Skóre", hra["skore"])
@@ -67,6 +90,14 @@ def render_hru():
                 if st.button(popisek, key=f"arcade_{index}", use_container_width=True):
                     klik_policko(index)
                     st.rerun()
+
+    if hra.get("feedback"):
+        if hra["feedback"].startswith("Správně"):
+            st.success(hra["feedback"])
+        elif hra["feedback"].startswith("Hvězdička utekla"):
+            st.info(hra["feedback"])
+        else:
+            st.error(hra["feedback"])
 
     if st.button("🛑 Konec hry", use_container_width=True):
         st.session_state.arcade = None

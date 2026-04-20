@@ -1,4 +1,5 @@
 import random
+import time
 
 import streamlit as st
 
@@ -17,6 +18,7 @@ def spustit_hru(zivoty: int = 5, kola: int = 20):
         "skore": 0,
         "cil": random.choice(MOZNOSTI),
         "feedback": "",
+        "posledni_akce_cas": time.time(),
     }
 
 
@@ -28,6 +30,7 @@ def _dalsi_kolo():
         hra["hotovo"] = True
     else:
         hra["cil"] = random.choice(MOZNOSTI)
+    hra["posledni_akce_cas"] = time.time()
     st.session_state.lov_barev = hra
 
 
@@ -46,13 +49,30 @@ def vyhodnot(volba: str):
     _dalsi_kolo()
 
 
+def _zpracuj_timeout():
+    hra = st.session_state.lov_barev
+    if hra["hotovo"]:
+        return
+    if time.time() - hra.get("posledni_akce_cas", 0) < 2:
+        return
+    hra["feedback"] = "Barva se změnila. Bez ztráty života."
+    st.session_state.lov_barev = hra
+    _dalsi_kolo()
+
+
 def render_hru():
     hra = st.session_state.get("lov_barev")
     if not hra:
         return
 
     st.header("🌈 Lov barev")
-    st.write("Klikni na barvu, kterou hledáme.")
+    st.write("Klikni na správnou barvu. Po 2 sekundách se hledaná barva změní bez ztráty života.")
+    if hasattr(st, "autorefresh"):
+        st.autorefresh(interval=500, key="lov_auto_refresh")
+    _zpracuj_timeout()
+    hra = st.session_state.get("lov_barev")
+    if not hra:
+        return
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Skóre", hra["skore"])
