@@ -238,6 +238,21 @@ def utrat_hvezdy(pocet):
     return True
 
 
+def pridej_test_hvezdy(pocet_hvezd):
+    """Navysi pocet spravnych odpovedi tak, aby pribyly hvezdicky pro testovani miniher."""
+    if pocet_hvezd <= 0:
+        return
+    data = nacti_statistiky()
+    data["spravne"] = data.get("spravne", 0) + (pocet_hvezd * 10)
+    uloz_statistiky(data)
+
+
+def vynuluj_utracene_hvezdy():
+    data = nacti_statistiky()
+    data["hvezdy_utracene"] = 0
+    uloz_statistiky(data)
+
+
 def init_state():
     if "sekce" not in st.session_state:
         st.session_state.sekce = "Domů"
@@ -661,6 +676,21 @@ def render_minihry():
             """,
             unsafe_allow_html=True,
         )
+        with st.expander("🧪 Testovací hvězdičky (pro vývoj)", expanded=False):
+            st.caption("Rychlé přidání hvězdiček jen pro test miniher.")
+            t1, t2, t3 = st.columns(3)
+            if t1.button("+5 ⭐", key="test_plus_5", use_container_width=True):
+                pridej_test_hvezdy(5)
+                st.success("Přidáno 5 hvězdiček pro testování.")
+                st.rerun()
+            if t2.button("+20 ⭐", key="test_plus_20", use_container_width=True):
+                pridej_test_hvezdy(20)
+                st.success("Přidáno 20 hvězdiček pro testování.")
+                st.rerun()
+            if t3.button("Obnovit utracené", key="test_reset_spent", use_container_width=True):
+                vynuluj_utracene_hvezdy()
+                st.success("Utracené hvězdičky byly vynulovány.")
+                st.rerun()
 
     if st.session_state.arcade and st.session_state.arcade.get("hotovo"):
         render_vysledek()
