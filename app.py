@@ -988,7 +988,16 @@ def main():
         render_minihry()
     else:
         if st.session_state.test is None:
-            st.info("Zatím nemáš aktivní test. Spusť ho v levém panelu.")
+            st.info("Zatím nemáš aktivní test. Spusť ho tady nebo v levém panelu.")
+            c1, c2 = st.columns(2)
+            if c1.button("📝 Spustit Doplň i/y", key="test_empty_iy", use_container_width=True):
+                priprav_test_iy(st.session_state.vyber_pismeno)
+                nastav_sekci("Test")
+                st.rerun()
+            if c2.button("🔎 Spustit Poznávačku", key="test_empty_pozn", use_container_width=True):
+                priprav_poznavacku(st.session_state.vyber_pismeno)
+                nastav_sekci("Test")
+                st.rerun()
         else:
             render_test()
 
