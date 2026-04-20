@@ -165,6 +165,8 @@ def pridej_vysledek(otazek, spravne, spatne, typ):
 def init_state():
     if "sekce" not in st.session_state:
         st.session_state.sekce = "Domu"
+    if "menu_sekce" not in st.session_state:
+        st.session_state.menu_sekce = st.session_state.sekce
     if "test" not in st.session_state:
         st.session_state.test = None
 
@@ -347,22 +349,26 @@ def main():
 
     st.sidebar.title("Menu")
     sekce_options = ["Domu", "Prehled slov", "Statistiky", "Test"]
+    if st.session_state.menu_sekce not in sekce_options:
+        st.session_state.menu_sekce = "Domu"
     if st.session_state.sekce not in sekce_options:
         st.session_state.sekce = "Domu"
-    sekce_index = sekce_options.index(st.session_state.sekce)
-    sekce = st.sidebar.radio("Sekce", sekce_options, index=sekce_index)
-    st.session_state.sekce = sekce
 
     st.sidebar.divider()
     vyber = st.sidebar.selectbox("Pismeno pro test", PISMENA, index=0)
     if st.sidebar.button("Spustit test Dopln i/y", use_container_width=True):
         priprav_test_iy(vyber)
         st.session_state.sekce = "Test"
+        st.session_state.menu_sekce = "Test"
         st.rerun()
     if st.sidebar.button("Spustit Poznavacku", use_container_width=True):
         priprav_poznavacku(vyber)
         st.session_state.sekce = "Test"
+        st.session_state.menu_sekce = "Test"
         st.rerun()
+
+    st.sidebar.radio("Sekce", sekce_options, key="menu_sekce")
+    st.session_state.sekce = st.session_state.menu_sekce
 
     if st.session_state.sekce == "Domu":
         render_domu()
