@@ -1,5 +1,4 @@
 import random
-import time
 
 import streamlit as st
 
@@ -14,7 +13,6 @@ def spustit_hru(zivoty: int, kola: int):
         "skore": 0,
         "cil": random.randint(0, 8),
         "hotovo": False,
-        "posledni_akce_cas": time.time(),
         "feedback": "",
     }
 
@@ -27,7 +25,6 @@ def _dalsi_kolo():
         hra["aktivni"] = False
     else:
         hra["cil"] = random.randint(0, 8)
-    hra["posledni_akce_cas"] = time.time()
     st.session_state.arcade = hra
 
 
@@ -45,28 +42,13 @@ def klik_policko(index: int):
     _dalsi_kolo()
 
 
-def _zpracuj_timeout():
-    hra = st.session_state.arcade
-    if hra["hotovo"]:
-        return
-    if time.time() - hra.get("posledni_akce_cas", 0) < 2:
-        return
-    hra["feedback"] = "Hvězdička utekla na jiné políčko. Bez ztráty života."
-    st.session_state.arcade = hra
-    _dalsi_kolo()
-
-
 def render_hru():
     hra = st.session_state.get("arcade")
     if not hra:
         return
 
     st.subheader("🕹️ Chytání hvězdiček")
-    st.caption("Po 2 sekundách hvězdička uteče jinam bez ztráty života.")
-    _zpracuj_timeout()
-    hra = st.session_state.get("arcade")
-    if not hra:
-        return
+    st.caption("Klikni na políčko se ⭐. Každý klik posune hru do dalšího kola.")
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Skóre", hra["skore"])

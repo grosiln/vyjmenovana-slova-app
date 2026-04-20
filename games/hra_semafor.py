@@ -1,5 +1,4 @@
 import random
-import time
 
 import streamlit as st
 
@@ -22,7 +21,6 @@ def spustit_hru(zivoty: int = 4, kola: int = 16):
         "skore": 0,
         "krok": random.choice(BARVY),
         "feedback": "",
-        "posledni_akce_cas": time.time(),
     }
 
 
@@ -34,7 +32,6 @@ def _dalsi_kolo():
         hra["hotovo"] = True
     else:
         hra["krok"] = random.choice(BARVY)
-    hra["posledni_akce_cas"] = time.time()
     st.session_state.semafor = hra
 
 
@@ -54,28 +51,13 @@ def vyhodnot(akce: str):
     _dalsi_kolo()
 
 
-def _zpracuj_timeout():
-    hra = st.session_state.semafor
-    if hra["hotovo"]:
-        return
-    if time.time() - hra.get("posledni_akce_cas", 0) < 2:
-        return
-    hra["feedback"] = "Další barva! Bez ztráty života."
-    st.session_state.semafor = hra
-    _dalsi_kolo()
-
-
 def render_hru():
     hra = st.session_state.get("semafor")
     if not hra:
         return
 
     st.subheader("🚦 Semafor sprint")
-    st.caption("Po 2 sekundách naskočí další barva bez ztráty života.")
-    _zpracuj_timeout()
-    hra = st.session_state.get("semafor")
-    if not hra:
-        return
+    st.caption("Vyber správnou reakci. Každé kliknutí posune hru do dalšího kola.")
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Skóre", hra["skore"])

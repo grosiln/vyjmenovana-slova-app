@@ -792,20 +792,10 @@ def nastav_vzhled():
         h1 {font-size: clamp(1.7rem, 2.6vw, 2.45rem) !important;}
         h2 {font-size: clamp(1.45rem, 2.2vw, 1.9rem) !important;}
         p, li, label, .stMarkdown, .stAlert {font-size: clamp(1rem, 1.3vw, 1.2rem) !important; line-height: 1.5;}
-        /* Ochrana proti orezani diakritiky (hacky/carky) */
+        /* Jemny fix na diakritiku bez zasahu do layoutu komponent */
         h1, h2, h3 {
-            overflow: visible !important;
-            line-height: 1.2 !important;
+            line-height: 1.25 !important;
             padding-top: 0.04em;
-            text-rendering: geometricPrecision;
-        }
-        p, li, label, .stMarkdown p, .stMarkdown li, .stAlert p {
-            overflow: visible !important;
-            line-height: 1.45 !important;
-            text-rendering: geometricPrecision;
-        }
-        [data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] * {
-            overflow: visible !important;
         }
         [data-testid="stSidebar"] * {font-size: clamp(1rem, 1.1vw, 1.08rem) !important;}
         [data-testid="stSidebar"] {
