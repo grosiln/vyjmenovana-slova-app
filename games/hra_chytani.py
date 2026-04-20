@@ -63,7 +63,6 @@ def render_hru():
 
     st.subheader("🕹️ Chytání hvězdiček")
     st.caption("Po 2 sekundách hvězdička uteče jinam bez ztráty života.")
-    st.markdown("<meta http-equiv='refresh' content='0.5'>", unsafe_allow_html=True)
     _zpracuj_timeout()
     hra = st.session_state.get("arcade")
     if not hra:

@@ -72,7 +72,6 @@ def render_hru():
 
     st.subheader("🚦 Semafor sprint")
     st.caption("Po 2 sekundách naskočí další barva bez ztráty života.")
-    st.markdown("<meta http-equiv='refresh' content='0.5'>", unsafe_allow_html=True)
     _zpracuj_timeout()
     hra = st.session_state.get("semafor")
     if not hra:

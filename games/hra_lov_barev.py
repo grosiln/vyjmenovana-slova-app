@@ -67,7 +67,6 @@ def render_hru():
 
     st.subheader("🌈 Lov barev")
     st.caption("Po 2 sekundách se hledaná barva změní bez ztráty života.")
-    st.markdown("<meta http-equiv='refresh' content='0.5'>", unsafe_allow_html=True)
     _zpracuj_timeout()
     hra = st.session_state.get("lov_barev")
     if not hra:
