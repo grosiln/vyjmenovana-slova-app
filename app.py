@@ -163,8 +163,8 @@ def pridej_vysledek(otazek, spravne, spatne, typ):
 
 
 def init_state():
-    if "stranka" not in st.session_state:
-        st.session_state.stranka = "Domu"
+    if "sekce" not in st.session_state:
+        st.session_state.sekce = "Domu"
     if "test" not in st.session_state:
         st.session_state.test = None
 
@@ -190,7 +190,6 @@ def priprav_test_iy(vyber):
         "spatne": 0,
         "feedback": "",
     }
-    st.session_state.stranka = "Test"
 
 
 def priprav_poznavacku(vyber):
@@ -216,7 +215,6 @@ def priprav_poznavacku(vyber):
         "spatne": 0,
         "feedback": "",
     }
-    st.session_state.stranka = "Test"
 
 
 def vyhodnot(odpoved):
@@ -280,7 +278,7 @@ def render_test():
         st.success("Vyborne!" if uspesnost >= 85 else "Dobra prace, trenovat dal.")
         if st.button("Nova sada otazek"):
             st.session_state.test = None
-            st.session_state.stranka = "Domu"
+            st.session_state.sekce = "Domu"
             st.rerun()
         return
 
@@ -348,7 +346,7 @@ def main():
     init_state()
 
     st.sidebar.title("Menu")
-    st.sidebar.radio("Sekce", ["Domu", "Prehled slov", "Statistiky"], key="stranka")
+    st.sidebar.radio("Sekce", ["Domu", "Prehled slov", "Statistiky"], key="sekce")
 
     st.sidebar.divider()
     vyber = st.sidebar.selectbox("Pismeno pro test", PISMENA, index=0)
@@ -361,9 +359,9 @@ def main():
 
     if st.session_state.test is not None:
         render_test()
-    elif st.session_state.stranka == "Domu":
+    elif st.session_state.sekce == "Domu":
         render_domu()
-    elif st.session_state.stranka == "Prehled slov":
+    elif st.session_state.sekce == "Prehled slov":
         render_prehled()
     else:
         render_statistiky()
