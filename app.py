@@ -346,25 +346,30 @@ def main():
     init_state()
 
     st.sidebar.title("Menu")
-    st.sidebar.radio("Sekce", ["Domu", "Prehled slov", "Statistiky"], key="sekce")
+    st.sidebar.radio("Sekce", ["Domu", "Prehled slov", "Statistiky", "Test"], key="sekce")
 
     st.sidebar.divider()
     vyber = st.sidebar.selectbox("Pismeno pro test", PISMENA, index=0)
     if st.sidebar.button("Spustit test Dopln i/y", use_container_width=True):
         priprav_test_iy(vyber)
+        st.session_state.sekce = "Test"
         st.rerun()
     if st.sidebar.button("Spustit Poznavacku", use_container_width=True):
         priprav_poznavacku(vyber)
+        st.session_state.sekce = "Test"
         st.rerun()
 
-    if st.session_state.test is not None:
-        render_test()
-    elif st.session_state.sekce == "Domu":
+    if st.session_state.sekce == "Domu":
         render_domu()
     elif st.session_state.sekce == "Prehled slov":
         render_prehled()
-    else:
+    elif st.session_state.sekce == "Statistiky":
         render_statistiky()
+    else:
+        if st.session_state.test is None:
+            st.info("Zatim nemas aktivni test. Spust ho v levem panelu.")
+        else:
+            render_test()
 
 
 if __name__ == "__main__":
