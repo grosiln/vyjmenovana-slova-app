@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
+from games.hra_chytani import render_hru, render_vysledek, spustit_hru
 
 
 SOUBOR_STATISTIK = Path("statistiky_vyjmenovana_slova.json")
@@ -129,12 +130,19 @@ def prazdne_statistiky():
 
 def nacti_statistiky():
     if not SOUBOR_STATISTIK.exists():
-        return prazdne_statistiky()
+        data = prazdne_statistiky()
+        data["hvezdy_utracene"] = 0
+        return data
     try:
         with SOUBOR_STATISTIK.open("r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            if "hvezdy_utracene" not in data:
+                data["hvezdy_utracene"] = 0
+            return data
     except Exception:
-        return prazdne_statistiky()
+        data = prazdne_statistiky()
+        data["hvezdy_utracene"] = 0
+        return data
 
 
 def uloz_statistiky(data):
@@ -162,6 +170,30 @@ def pridej_vysledek(otazek, spravne, spatne, typ):
     uloz_statistiky(data)
 
 
+def ziskane_hvezdy_celkem():
+    data = nacti_statistiky()
+    return data.get("spravne", 0) // 10
+
+
+def dostupne_hvezdy():
+    data = nacti_statistiky()
+    ziskane = data.get("spravne", 0) // 10
+    utracene = data.get("hvezdy_utracene", 0)
+    return max(0, ziskane - utracene)
+
+
+def utrat_hvezdy(pocet):
+    data = nacti_statistiky()
+    ziskane = data.get("spravne", 0) // 10
+    utracene = data.get("hvezdy_utracene", 0)
+    dostupne = max(0, ziskane - utracene)
+    if dostupne < pocet:
+        return False
+    data["hvezdy_utracene"] = utracene + pocet
+    uloz_statistiky(data)
+    return True
+
+
 def init_state():
     if "sekce" not in st.session_state:
         st.session_state.sekce = "Domů"
@@ -171,6 +203,8 @@ def init_state():
         st.session_state.test = None
     if "vyber_pismeno" not in st.session_state:
         st.session_state.vyber_pismeno = "Všechna"
+    if "arcade" not in st.session_state:
+        st.session_state.arcade = None
 
 
 def priprav_test_iy(vyber):
@@ -437,6 +471,7 @@ def render_statistiky():
     st.markdown(f"### Aktuální odznak: {odznak_za_uspesnost(usp)}")
     hvezdy_celkem, chybi_celkem = hvezdicky_za_spravne(spravne)
     st.markdown(f"### ⭐ Hvězdičky celkem: {text_hvezdicek(hvezdy_celkem)}")
+    st.write(f"🎮 Dostupné hvězdy na minihry: **{dostupne_hvezdy()}**")
     if chybi_celkem > 0:
         st.caption(f"Do další hvězdičky chybí {chybi_celkem} správných odpovědí.")
     else:
@@ -459,6 +494,62 @@ def render_statistiky():
         st.session_state.sekce = "Test"
         st.session_state.menu_sekce = "Test"
         st.rerun()
+
+
+def render_minihry():
+    st.header("🎮 Minihry - odměna")
+    st.write("Tady se už neučíš. Tady si jen hraješ.")
+
+    ziskane = ziskane_hvezdy_celkem()
+    dostupne = dostupne_hvezdy()
+    c1, c2 = st.columns(2)
+    c1.metric("Získané hvězdy celkem", ziskane)
+    c2.metric("Dostupné hvězdy", dostupne)
+
+    if st.session_state.arcade and st.session_state.arcade.get("hotovo"):
+        render_vysledek()
+        return
+
+    if st.session_state.arcade and st.session_state.arcade.get("aktivni"):
+        render_hru()
+        return
+
+    st.markdown("### Vyber herní režim")
+    r1, r2 = st.columns(2)
+
+    with r1:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>⭐ Rychlá hra</h3>
+                <p>Cena: 3 hvězdy<br>Životy: 3<br>Kola: 18</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Spustit rychlou hru (3 ⭐)", use_container_width=True):
+            if utrat_hvezdy(3):
+                spustit_hru(zivoty=3, kola=18)
+                st.rerun()
+            st.error("Nemáš dost hvězdiček.")
+
+    with r2:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h3>⭐ Delší hra</h3>
+                <p>Cena: 5 hvězd<br>Životy: 5<br>Kola: 28</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Spustit delší hru (5 ⭐)", use_container_width=True):
+            if utrat_hvezdy(5):
+                spustit_hru(zivoty=5, kola=28)
+                st.rerun()
+            st.error("Nemáš dost hvězdiček.")
+
+    st.info("Hry jsou odměna za trénink. Za každých 10 správných odpovědí získáš 1 hvězdičku.")
 
 
 def render_dnesni_skore():
@@ -607,7 +698,7 @@ def main():
     nastav_vzhled()
 
     st.sidebar.title("🎯 Menu aplikace")
-    sekce_options = ["Domů", "Dnešní skóre", "Přehled slov", "Statistiky", "Test"]
+    sekce_options = ["Domů", "Dnešní skóre", "Přehled slov", "Statistiky", "Test", "Minihry"]
     if st.session_state.menu_sekce not in sekce_options:
         st.session_state.menu_sekce = "Domů"
     if st.session_state.sekce not in sekce_options:
@@ -637,6 +728,8 @@ def main():
         render_prehled()
     elif st.session_state.sekce == "Statistiky":
         render_statistiky()
+    elif st.session_state.sekce == "Minihry":
+        render_minihry()
     else:
         if st.session_state.test is None:
             st.info("Zatím nemáš aktivní test. Spusť ho v levém panelu.")
