@@ -781,16 +781,29 @@ def nastav_vzhled():
         .stApp {
             background: linear-gradient(180deg, #f8fbff 0%, #edf8ff 45%, #fff9ef 100%);
         }
-        /* Zabrani useknuti obsahu na nekterych zarizenich/browserech */
+        /* Globalni reset layoutu - zabrani useknuti obsahu */
+        html, body, .stApp {
+            height: auto !important;
+            min-height: 100% !important;
+            overflow-y: auto !important;
+        }
         [data-testid="stAppViewContainer"],
         [data-testid="stAppViewContainer"] .main,
         section.main {
             overflow: visible !important;
             height: auto !important;
             max-height: none !important;
+            min-height: 100vh !important;
         }
         [data-testid="stAppViewContainer"] .main {
             overflow-y: auto !important;
+        }
+        [data-testid="stAppViewContainer"] .block-container {
+            padding-bottom: 2rem !important;
+        }
+        /* Po navratu z miniher zajisti zobrazeni standardniho rozhrani */
+        [data-testid="stSidebar"], [data-testid="collapsedControl"], header[data-testid="stHeader"] {
+            display: initial !important;
         }
         .block-container {padding-top: 1.2rem; max-width: 1280px; padding-left: 1.4rem; padding-right: 1.4rem;}
         h1, h2, h3 {font-weight: 800 !important;}
