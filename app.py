@@ -7,7 +7,7 @@ import streamlit as st
 
 
 SOUBOR_STATISTIK = Path("statistiky_vyjmenovana_slova.json")
-PISMENA = ["Vsechna", "B", "L", "M", "P", "S", "V", "Z"]
+PISMENA = ["Všechna", "B", "L", "M", "P", "S", "V", "Z"]
 
 VYJMENOVANA = {
     "B": [
@@ -164,7 +164,7 @@ def pridej_vysledek(otazek, spravne, spatne, typ):
 
 def init_state():
     if "sekce" not in st.session_state:
-        st.session_state.sekce = "Domu"
+        st.session_state.sekce = "Domů"
     if "menu_sekce" not in st.session_state:
         st.session_state.menu_sekce = st.session_state.sekce
     if "test" not in st.session_state:
@@ -172,7 +172,7 @@ def init_state():
 
 
 def priprav_test_iy(vyber):
-    if vyber == "Vsechna":
+    if vyber == "Všechna":
         vyj_slova = [s for arr in TEST_IY_PO_PISMENE.values() for s in arr]
     else:
         vyj_slova = TEST_IY_PO_PISMENE.get(vyber, [])
@@ -185,7 +185,7 @@ def priprav_test_iy(vyber):
 
     st.session_state.test = {
         "typ": "iy",
-        "nazev": f"dopln i/y ({vyber})",
+        "nazev": f"doplň i/y ({vyber})",
         "otazky": otazky[:20],
         "idx": 0,
         "spravne": 0,
@@ -195,7 +195,7 @@ def priprav_test_iy(vyber):
 
 
 def priprav_poznavacku(vyber):
-    if vyber == "Vsechna":
+    if vyber == "Všechna":
         vyj_slova = [s for arr in VYJMENOVANA.values() for s in arr]
     else:
         vyj_slova = VYJMENOVANA.get(vyber, [])
@@ -210,7 +210,7 @@ def priprav_poznavacku(vyber):
 
     st.session_state.test = {
         "typ": "poznavacka",
-        "nazev": f"poznavacka ({vyber})",
+        "nazev": f"poznávačka ({vyber})",
         "otazky": otazky,
         "idx": 0,
         "spravne": 0,
@@ -224,38 +224,38 @@ def vyhodnot(odpoved):
     slovo, spravna = test["otazky"][test["idx"]]
     if odpoved == spravna:
         test["spravne"] += 1
-        test["feedback"] = "Spravne!"
+        test["feedback"] = "Správně!"
     else:
         test["spatne"] += 1
         if test["typ"] == "iy":
-            test["feedback"] = f"Spatne. Spravne je '{spravna}' -> {slovo}"
+            test["feedback"] = f"Špatně. Správně je '{spravna}' -> {slovo}"
         elif spravna == "V":
-            test["feedback"] = f"Spatne. '{slovo}' je vyjmenovane/odvozene."
+            test["feedback"] = f"Špatně. '{slovo}' je vyjmenované/odvozené."
         else:
-            test["feedback"] = f"Spatne. '{slovo}' neni vyjmenovane slovo."
+            test["feedback"] = f"Špatně. '{slovo}' není vyjmenované slovo."
 
     test["idx"] += 1
     st.session_state.test = test
 
 
 def render_domu():
-    st.header("Vyjmenovana slova")
-    st.write("Program pro vyuku vyjmenovanych slov.")
+    st.header("Vyjmenovaná slova")
+    st.write("Program pro výuku vyjmenovaných slov pro 2. a 3. třídu.")
     st.markdown(
         "\n".join(
             [
-                "- Prehled vyjmenovanych slov po B, L, M, P, S, V, Z",
-                "- Cviceni Dopln i/y",
-                "- Poznavacka: vyjmenovane vs. nevyjmenovane slovo",
-                "- Ukladani vysledku (statistiky)",
+                "- Přehled vyjmenovaných slov po B, L, M, P, S, V, Z",
+                "- Cvičení: Doplň i/y",
+                "- Poznávačka: vyjmenované vs. nevyjmenované slovo",
+                "- Ukládání výsledků (statistiky)",
             ]
         )
     )
-    st.info("Tip: Nejdriv otevri Prehled slov, pak spust test.")
+    st.info("Tip: Nejdřív otevři Přehled slov, pak spusť test.")
 
 
 def render_prehled():
-    st.header("Prehled vyjmenovanych slov")
+    st.header("Přehled vyjmenovaných slov")
     for p in ["B", "L", "M", "P", "S", "V", "Z"]:
         st.subheader(f"Po {p}")
         st.write(", ".join(VYJMENOVANA[p]))
@@ -264,7 +264,7 @@ def render_prehled():
 def render_test():
     test = st.session_state.test
     if not test:
-        st.warning("Nejdriv zaloz test.")
+        st.warning("Nejdřív spusť test v levém menu.")
         return
 
     if test["idx"] >= len(test["otazky"]):
@@ -272,15 +272,15 @@ def render_test():
         uspesnost = round((test["spravne"] / celkem) * 100, 1) if celkem else 0.0
         pridej_vysledek(celkem, test["spravne"], test["spatne"], test["nazev"])
 
-        st.header("Vysledek testu")
-        st.write(f"Otazek: {celkem}")
-        st.write(f"Spravne: {test['spravne']}")
-        st.write(f"Spatne: {test['spatne']}")
-        st.write(f"Uspesnost: {uspesnost} %")
-        st.success("Vyborne!" if uspesnost >= 85 else "Dobra prace, trenovat dal.")
-        if st.button("Nova sada otazek"):
+        st.header("Výsledek testu")
+        st.write(f"Otázek: {celkem}")
+        st.write(f"Správně: {test['spravne']}")
+        st.write(f"Špatně: {test['spatne']}")
+        st.write(f"Úspěšnost: {uspesnost} %")
+        st.success("Výborně!" if uspesnost >= 85 else "Dobrá práce, trénuj dál.")
+        if st.button("Nová sada otázek"):
             st.session_state.test = None
-            st.session_state.sekce = "Domu"
+            st.session_state.sekce = "Domů"
             st.rerun()
         return
 
@@ -289,7 +289,7 @@ def render_test():
 
     if test["typ"] == "iy":
         maska, _ = maskuj_i_y(slovo)
-        st.header(f"Dopln i/y ({progress})")
+        st.header(f"Doplň i/y ({progress})")
         st.subheader(f"Slovo: {maska}")
         c1, c2 = st.columns(2)
         if c1.button("i", use_container_width=True):
@@ -299,19 +299,19 @@ def render_test():
             vyhodnot("y")
             st.rerun()
     else:
-        st.header(f"Poznavacka ({progress})")
+        st.header(f"Poznávačka ({progress})")
         st.subheader(f"Slovo: {slovo}")
-        st.write("Je to vyjmenovane/odvozene slovo?")
+        st.write("Je to vyjmenované nebo odvozené slovo?")
         c1, c2 = st.columns(2)
-        if c1.button("V = vyjmenovane", use_container_width=True):
+        if c1.button("V = vyjmenované", use_container_width=True):
             vyhodnot("V")
             st.rerun()
-        if c2.button("N = nevyjmenovane", use_container_width=True):
+        if c2.button("N = nevyjmenované", use_container_width=True):
             vyhodnot("N")
             st.rerun()
 
     if test["feedback"]:
-        if test["feedback"].startswith("Spravne"):
+        if test["feedback"].startswith("Správně"):
             st.success(test["feedback"])
         else:
             st.error(test["feedback"])
@@ -325,43 +325,67 @@ def render_statistiky():
     spatne = data.get("spatne", 0)
     usp = round((spravne / celkem) * 100, 1) if celkem else 0.0
 
-    st.write(f"Celkem otazek: {celkem}")
-    st.write(f"Celkem spravne: {spravne}")
-    st.write(f"Celkem spatne: {spatne}")
-    st.write(f"Dlouhodoba uspesnost: {usp} %")
+    st.write(f"Celkem otázek: {celkem}")
+    st.write(f"Celkem správně: {spravne}")
+    st.write(f"Celkem špatně: {spatne}")
+    st.write(f"Dlouhodobá úspěšnost: {usp} %")
 
     historie = list(reversed(data.get("historie", [])))
     if historie:
         st.dataframe(historie, use_container_width=True)
     else:
-        st.info("Historie je zatim prazdna.")
+        st.info("Historie je zatím prázdná.")
 
     if st.button("Vymazat statistiky"):
         uloz_statistiky(prazdne_statistiky())
-        st.success("Statistiky byly smazany.")
+        st.success("Statistiky byly smazány.")
         st.rerun()
+
+
+def nastav_vzhled():
+    st.markdown(
+        """
+        <style>
+        .block-container {padding-top: 1.2rem; max-width: 1100px;}
+        h1, h2, h3 {font-weight: 800 !important;}
+        h1 {font-size: 2.2rem !important;}
+        h2 {font-size: 1.8rem !important;}
+        p, li, label, .stMarkdown, .stAlert {font-size: 1.2rem !important; line-height: 1.5;}
+        [data-testid="stSidebar"] * {font-size: 1.08rem !important;}
+        .stButton > button {
+            font-size: 1.35rem !important;
+            font-weight: 700 !important;
+            min-height: 3.3rem !important;
+            border-radius: 12px !important;
+        }
+        .stRadio label p {font-size: 1.18rem !important; font-weight: 600 !important;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def main():
     random.seed()
-    st.set_page_config(page_title="Vyjmenovana slova", page_icon="📘", layout="centered")
+    st.set_page_config(page_title="Vyjmenovaná slova", page_icon="📘", layout="wide")
     init_state()
+    nastav_vzhled()
 
-    st.sidebar.title("Menu")
-    sekce_options = ["Domu", "Prehled slov", "Statistiky", "Test"]
+    st.sidebar.title("Menu aplikace")
+    sekce_options = ["Domů", "Přehled slov", "Statistiky", "Test"]
     if st.session_state.menu_sekce not in sekce_options:
-        st.session_state.menu_sekce = "Domu"
+        st.session_state.menu_sekce = "Domů"
     if st.session_state.sekce not in sekce_options:
-        st.session_state.sekce = "Domu"
+        st.session_state.sekce = "Domů"
 
     st.sidebar.divider()
-    vyber = st.sidebar.selectbox("Pismeno pro test", PISMENA, index=0)
-    if st.sidebar.button("Spustit test Dopln i/y", use_container_width=True):
+    vyber = st.sidebar.selectbox("Písmeno pro test", PISMENA, index=0)
+    if st.sidebar.button("Spustit test Doplň i/y", use_container_width=True):
         priprav_test_iy(vyber)
         st.session_state.sekce = "Test"
         st.session_state.menu_sekce = "Test"
         st.rerun()
-    if st.sidebar.button("Spustit Poznavacku", use_container_width=True):
+    if st.sidebar.button("Spustit Poznávačku", use_container_width=True):
         priprav_poznavacku(vyber)
         st.session_state.sekce = "Test"
         st.session_state.menu_sekce = "Test"
@@ -370,15 +394,15 @@ def main():
     st.sidebar.radio("Sekce", sekce_options, key="menu_sekce")
     st.session_state.sekce = st.session_state.menu_sekce
 
-    if st.session_state.sekce == "Domu":
+    if st.session_state.sekce == "Domů":
         render_domu()
-    elif st.session_state.sekce == "Prehled slov":
+    elif st.session_state.sekce == "Přehled slov":
         render_prehled()
     elif st.session_state.sekce == "Statistiky":
         render_statistiky()
     else:
         if st.session_state.test is None:
-            st.info("Zatim nemas aktivni test. Spust ho v levem panelu.")
+            st.info("Zatím nemáš aktivní test. Spusť ho v levém panelu.")
         else:
             render_test()
 
