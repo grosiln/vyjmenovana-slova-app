@@ -810,6 +810,19 @@ def nastav_vzhled():
         h1 {font-size: clamp(1.7rem, 2.6vw, 2.45rem) !important;}
         h2 {font-size: clamp(1.45rem, 2.2vw, 1.9rem) !important;}
         p, li, label, .stMarkdown, .stAlert {font-size: clamp(1rem, 1.3vw, 1.2rem) !important; line-height: 1.5;}
+        /* Ochrana proti orezani diakritiky (hacky/carky) */
+        h1, h2, h3, p, li, label, span, div {
+            overflow: visible !important;
+            line-height: 1.35 !important;
+            padding-top: 0.04em;
+            text-rendering: geometricPrecision;
+        }
+        .stMarkdown p, .stMarkdown li, .stAlert p {
+            line-height: 1.45 !important;
+        }
+        [data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] * {
+            overflow: visible !important;
+        }
         [data-testid="stSidebar"] * {font-size: clamp(1rem, 1.1vw, 1.08rem) !important;}
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #5f7cff 0%, #6c63ff 100%);
