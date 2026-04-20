@@ -787,15 +787,28 @@ def nastav_vzhled():
         [data-testid="stSidebar"], [data-testid="collapsedControl"], header[data-testid="stHeader"] {
             display: initial !important;
         }
-        .block-container {padding-top: 1.2rem; max-width: 1280px; padding-left: 1.4rem; padding-right: 1.4rem;}
-        h1, h2, h3 {font-weight: 800 !important;}
+        .block-container {padding-top: 1.6rem; max-width: 1280px; padding-left: 1.4rem; padding-right: 1.4rem;}
+        /* Nadpisy s dostatkem mista pro ceskou diakritiku (hacky, carky) */
+        h1, h2, h3, h4 {
+            font-weight: 800 !important;
+            line-height: 1.5 !important;
+            padding-top: 0.25em !important;
+            padding-bottom: 0.1em !important;
+            margin-top: 0.35em !important;
+            overflow: visible !important;
+        }
         h1 {font-size: clamp(1.7rem, 2.6vw, 2.45rem) !important;}
         h2 {font-size: clamp(1.45rem, 2.2vw, 1.9rem) !important;}
-        p, li, label, .stMarkdown, .stAlert {font-size: clamp(1rem, 1.3vw, 1.2rem) !important; line-height: 1.5;}
-        /* Jemny fix na diakritiku bez zasahu do layoutu komponent */
-        h1, h2, h3 {
-            line-height: 1.25 !important;
-            padding-top: 0.04em;
+        h3 {font-size: clamp(1.2rem, 1.8vw, 1.55rem) !important;}
+        p, li, label, .stMarkdown, .stAlert {
+            font-size: clamp(1rem, 1.3vw, 1.2rem) !important;
+            line-height: 1.6 !important;
+        }
+        /* Prvni nadpis v kontejneru nepotrebuje margin nahoru */
+        .block-container h1:first-child,
+        .block-container h2:first-child,
+        .block-container h3:first-child {
+            margin-top: 0 !important;
         }
         [data-testid="stSidebar"] * {font-size: clamp(1rem, 1.1vw, 1.08rem) !important;}
         [data-testid="stSidebar"] {
@@ -823,11 +836,16 @@ def nastav_vzhled():
         .hero-box {
             background: linear-gradient(135deg, #6a89ff 0%, #ff7eb6 100%);
             color: white;
-            padding: 1.2rem 1.4rem;
+            padding: 1.5rem 1.4rem 1.2rem 1.4rem;
             border-radius: 18px;
             margin-bottom: 1rem;
         }
-        .hero-box h1 {margin: 0 0 0.4rem 0; color: white;}
+        .hero-box h1 {
+            margin: 0 0 0.4rem 0 !important;
+            padding-top: 0.15em !important;
+            color: white;
+            line-height: 1.4 !important;
+        }
         .feature-card, .letter-card, .word-box {
             background: white;
             border: 2px solid #d8e3ff;
@@ -867,6 +885,9 @@ def nastav_vzhled():
             text-align: center;
             border: 3px solid #9ec5ff;
             background: #f4f9ff;
+            line-height: 1.5 !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
         }
         .hint-emoji-box {
             font-size: clamp(2.2rem, 5vw, 3.4rem);
