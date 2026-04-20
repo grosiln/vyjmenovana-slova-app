@@ -3,7 +3,7 @@ import streamlit.components.v1 as components
 
 
 def spustit_hru():
-    st.session_state.space_invaders = {"aktivni": True, "pozadat_navrat": False}
+    st.session_state.space_invaders = {"aktivni": True}
 
 
 def _html_hry() -> str:
@@ -16,11 +16,8 @@ def _html_hry() -> str:
     <span id="si-stars">⭐ 0</span>
   </div>
   <canvas id="si-canvas" width="640" height="520"
-          style="background:#000; display:block; margin:0 auto; outline: none; border: 2px solid #1a2050; cursor: crosshair;"></canvas>
-  <div id="si-msg" style="color:#fff; background:#0b0f2a; padding:10px 14px;
-                          border-radius:0 0 12px 12px; text-align:center; font-weight:600;">
-    🔊 Klikni do hry pro zapnutí zvuku. Ovládání: ← → pohyb, Mezerník = střelba
-  </div>
+          style="background:#000; display:block; margin:0 auto; outline: none;
+                 border: 2px solid #1a2050; cursor: pointer;"></canvas>
 </div>
 
 <script>
@@ -31,22 +28,16 @@ def _html_hry() -> str:
   const scoreEl = document.getElementById('si-score');
   const livesEl = document.getElementById('si-lives');
   const starsEl = document.getElementById('si-stars');
-  const msgEl = document.getElementById('si-msg');
 
   // ---------- AUDIO ----------
   let audioCtx = null;
-  let audioReady = false;
   function ensureAudio(){
     if(!audioCtx){
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
       catch(e){ audioCtx = null; }
     }
-    if(audioCtx){
-      if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
-      audioReady = true;
-    }
+    if(audioCtx && audioCtx.state === 'suspended'){ audioCtx.resume(); }
   }
-  // Zapni audio pri jakekoliv interakci (klik / klavesa) v iframe
   document.addEventListener('mousedown', ensureAudio);
   document.addEventListener('keydown', ensureAudio);
   document.addEventListener('touchstart', ensureAudio);
@@ -67,9 +58,7 @@ def _html_hry() -> str:
     const len = Math.floor(audioCtx.sampleRate * dur);
     const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
     const d = buf.getChannelData(0);
-    for(let i=0;i<len;i++){
-      d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2);
-    }
+    for(let i=0;i<len;i++){ d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2); }
     const src = audioCtx.createBufferSource(); src.buffer = buf;
     const g = audioCtx.createGain(); g.gain.value = vol;
     src.connect(g); g.connect(audioCtx.destination);
@@ -82,11 +71,10 @@ def _html_hry() -> str:
   function sndStar(){ tone(1200, 0.08, 'sine', 0.12); tone(1700, 0.1, 'sine', 0.1); }
 
   // ---------- STATE ----------
-  // stav: 'playing' | 'gameover' | 'won'
-  let state;
+  // 'intro' | 'playing' | 'gameover' | 'won'
+  let state = 'intro';
   let player, bullets, enemyBullets, enemies, stars;
   let dir, score, lives, starCount, tick, shootCd;
-  let gameOverAnim;
 
   function makeEnemies(){
     const arr = [];
@@ -94,17 +82,13 @@ def _html_hry() -> str:
     const offsetX = 60, offsetY = 50;
     for(let r=0;r<rows;r++){
       for(let c=0;c<cols;c++){
-        arr.push({
-          x: offsetX + c*64, y: offsetY + r*42,
-          w: 40, h: 26, alive: true,
-          kind: r
-        });
+        arr.push({ x: offsetX + c*64, y: offsetY + r*42, w: 40, h: 26, alive: true, kind: r });
       }
     }
     return arr;
   }
 
-  function resetGame(){
+  function initGameData(){
     player = { x: W/2-24, y: H-46, w: 48, h: 22 };
     bullets = [];
     enemyBullets = [];
@@ -113,17 +97,10 @@ def _html_hry() -> str:
     dir = 1;
     score = 0; lives = 3; starCount = 0;
     tick = 0; shootCd = 0;
-    state = 'playing';
-    gameOverAnim = 0;
-    msgEl.textContent = '← → pohyb, Mezerník = střelba. 3 životy. Hodně štěstí!';
   }
-
-  function pozadejNavrat(){
-    // Signal pro Streamlit: ulozime priznak do URL a refreshneme rodice s dotazem.
-    // Protoze iframe nemuze primo klikat na Streamlit tlacitko, uzivatele dovedeme k tlacitku pod hrou.
-    msgEl.innerHTML = '👇 <b>Klikni dole na tlačítko "⬅️ Zpět na výběr her"</b>';
-    // Zvyraznim vizualne canvas, aby to bylo jasne
-    canvas.style.opacity = '0.5';
+  function startGame(){
+    initGameData();
+    state = 'playing';
   }
 
   // ---------- INPUT ----------
@@ -132,10 +109,10 @@ def _html_hry() -> str:
   canvas.addEventListener('mousedown', ()=>{
     canvas.focus();
     ensureAudio();
-    if(state === 'gameover' || state === 'won'){
-      // Klik na hlasku = pozadat o navrat na vyber her
-      pozadejNavrat();
+    if(state === 'intro'){
+      startGame();
     }
+    // na gameover / won klik nic nemeni - uzivatel musi pouzit tlacitko v Streamlitu
   });
   canvas.addEventListener('keydown', (e)=>{
     if(['ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
@@ -145,20 +122,13 @@ def _html_hry() -> str:
       shootCd = 12;
       sndShoot();
     }
-    if((state === 'gameover' || state === 'won') && e.code === 'Enter'){
-      resetGame();
-      canvas.style.opacity = '1';
-    }
   });
   canvas.addEventListener('keyup', (e)=>{ keys[e.code] = false; });
 
   // ---------- UPDATE ----------
   function update(){
     tick++;
-    if(state !== 'playing'){
-      gameOverAnim++;
-      return;
-    }
+    if(state !== 'playing') return;
 
     const speed = 6;
     if(keys['ArrowLeft']) player.x -= speed;
@@ -173,10 +143,8 @@ def _html_hry() -> str:
     enemyBullets = enemyBullets.filter(b => b.y < H);
 
     const alive = enemies.filter(e => e.alive);
-    if(alive.length === 0){
-      state = 'won';
-      return;
-    }
+    if(alive.length === 0){ state = 'won'; return; }
+
     const speedE = 0.6 + (enemies.length - alive.length) * 0.07;
     const minX = Math.min(...alive.map(e => e.x));
     const maxX = Math.max(...alive.map(e => e.x + e.w));
@@ -189,80 +157,56 @@ def _html_hry() -> str:
 
     if(Math.random() < 0.025 && alive.length){
       const shooter = alive[Math.floor(Math.random()*alive.length)];
-      enemyBullets.push({
-        x: shooter.x + shooter.w/2 - 2,
-        y: shooter.y + shooter.h,
-        w: 4, h: 12
-      });
+      enemyBullets.push({ x: shooter.x + shooter.w/2 - 2, y: shooter.y + shooter.h, w: 4, h: 12 });
       sndAlienShoot();
     }
 
     if(Math.random() < 0.005){
-      stars.push({
-        x: 20 + Math.random()*(W-60),
-        y: -24, w: 24, h: 24
-      });
+      stars.push({ x: 20 + Math.random()*(W-60), y: -24, w: 24, h: 24 });
     }
     stars.forEach(s => s.y += 2);
     stars = stars.filter(s => s.y < H);
 
-    // bullets vs enemies
     for(const b of bullets){
       for(const e of enemies){
         if(!e.alive) continue;
         if(b.x < e.x + e.w && b.x + b.w > e.x &&
            b.y < e.y + e.h && b.y + b.h > e.y){
-          e.alive = false;
-          b.y = -999;
-          score += 10;
-          sndAlienHit();
+          e.alive = false; b.y = -999; score += 10; sndAlienHit();
         }
       }
     }
 
-    // bullets vs falling stars
     for(const b of bullets){
       for(const s of stars){
         if(s.taken) continue;
         if(b.x < s.x + s.w && b.x + b.w > s.x &&
            b.y < s.y + s.h && b.y + b.h > s.y){
-          s.taken = true;
-          b.y = -999;
-          starCount++;
-          score += 5;
-          sndStar();
+          s.taken = true; b.y = -999; starCount++; score += 5; sndStar();
         }
       }
     }
     stars = stars.filter(s => !s.taken);
 
-    // enemy bullets vs player
     for(const b of enemyBullets){
       if(b.x < player.x + player.w && b.x + b.w > player.x &&
          b.y < player.y + player.h && b.y + b.h > player.y){
         b.y = H + 999;
         lives--;
         sndPlayerBoom();
-        if(lives <= 0){
-          state = 'gameover';
-        }
+        if(lives <= 0){ state = 'gameover'; }
       }
     }
 
-    // enemies reached player line
     if(alive.some(e => e.y + e.h >= player.y - 4)){
-      lives = 0;
-      state = 'gameover';
-      sndPlayerBoom();
+      lives = 0; state = 'gameover'; sndPlayerBoom();
     }
   }
 
-  // ---------- DRAW ----------
+  // ---------- DRAW helpers ----------
   function drawShip(x, y, w, h){
-    ctx.fillStyle = '#4fc3f7';
-    ctx.fillRect(x, y+6, w, h-6);
-    ctx.fillStyle = '#81d4fa';
-    ctx.fillRect(x + w/2 - 5, y, 10, 8);
+    ctx.fillStyle = '#4fc3f7'; ctx.fillRect(x, y+6, w, h-6);
+    ctx.fillStyle = '#81d4fa'; ctx.fillRect(x + w/2 - 5, y, 10, 8);
     ctx.fillStyle = '#1976d2';
     ctx.fillRect(x+4, y+h-4, 6, 4);
     ctx.fillRect(x+w-10, y+h-4, 6, 4);
@@ -278,70 +222,150 @@ def _html_hry() -> str:
     ctx.fillRect(e.x+8, e.y+10, 6, 6);
     ctx.fillRect(e.x+e.w-14, e.y+10, 6, 6);
   }
-
-  function drawOverlay(){
-    // polopruhledne pozadi
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, H/2 - 110, W, 220);
-
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    if(state === 'gameover'){
-      // puls efekt
-      const pulse = 1 + Math.sin(gameOverAnim * 0.15) * 0.06;
-      ctx.save();
-      ctx.translate(W/2, H/2 - 40);
-      ctx.scale(pulse, pulse);
-      ctx.fillStyle = '#ff5252';
-      ctx.font = 'bold 48px sans-serif';
-      ctx.fillText('💀 KONEC HRY', 0, 0);
-      ctx.restore();
-
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText('Nemáš životy.', W/2, H/2 + 10);
-
-      ctx.fillStyle = '#ffd54f';
-      ctx.font = 'bold 20px sans-serif';
-      ctx.fillText('KLIKNI SEM pro návrat na výběr her', W/2, H/2 + 50);
-
-      ctx.fillStyle = '#bbb';
-      ctx.font = '16px sans-serif';
-      ctx.fillText('(nebo stiskni Enter pro novou hru)', W/2, H/2 + 80);
-    } else if(state === 'won'){
-      ctx.fillStyle = '#81c784';
-      ctx.font = 'bold 48px sans-serif';
-      ctx.fillText('🎉 VYHRÁLS!', W/2, H/2 - 40);
-
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 22px sans-serif';
-      ctx.fillText('Skóre: ' + score + '   ⭐ ' + starCount, W/2, H/2 + 5);
-
-      ctx.fillStyle = '#ffd54f';
-      ctx.font = 'bold 20px sans-serif';
-      ctx.fillText('KLIKNI SEM pro návrat na výběr her', W/2, H/2 + 45);
-
-      ctx.fillStyle = '#bbb';
-      ctx.font = '16px sans-serif';
-      ctx.fillText('(nebo stiskni Enter pro novou hru)', W/2, H/2 + 75);
-    }
-
-    ctx.textAlign = 'start';
-    ctx.textBaseline = 'alphabetic';
-  }
-
-  function draw(){
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, H);
-
-    // hvezdy v pozadi
+  function drawStarfield(){
     for(let i=0;i<60;i++){
       const sx = (i*97 + tick*0.35) % W;
       const sy = (i*53 + tick*0.5) % H;
       ctx.fillStyle = (i % 7 === 0) ? '#88f' : '#334';
       ctx.fillRect(sx, sy, 2, 2);
     }
+  }
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  // ---------- SCREENS ----------
+  function drawIntro(){
+    // cerne pozadi s hvezdami
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    drawStarfield();
+
+    // Bila karta s instrukcemi
+    const cardX = 60, cardY = 60, cardW = W-120, cardH = H-120;
+    ctx.fillStyle = '#ffffff';
+    roundRect(cardX, cardY, cardW, cardH, 18); ctx.fill();
+    ctx.strokeStyle = '#6a89ff'; ctx.lineWidth = 3;
+    roundRect(cardX, cardY, cardW, cardH, 18); ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Titulek
+    ctx.fillStyle = '#14213d';
+    ctx.font = 'bold 40px sans-serif';
+    ctx.fillText('👾 Space Invaders', W/2, cardY + 55);
+
+    // Instrukce - radky
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('Jak se hraje:', W/2, cardY + 110);
+
+    ctx.font = '20px sans-serif';
+    ctx.fillStyle = '#222';
+    const lines = [
+      '⬅ ➡  šipky = pohyb raketky',
+      '␣   Mezerník = střelba',
+      '❤️ ❤️ ❤️   Máš 3 životy',
+      '⭐   Sestřel padající hvězdičky pro bonus',
+      '👾   Znič všechny mimozemšťany'
+    ];
+    let ly = cardY + 150;
+    for(const line of lines){
+      ctx.fillText(line, W/2, ly);
+      ly += 34;
+    }
+
+    // Start button - zluto-oranzovy
+    const btnW = 360, btnH = 64;
+    const btnX = W/2 - btnW/2, btnY = cardY + cardH - btnH - 30;
+    const pulse = 1 + Math.sin(tick * 0.08) * 0.03;
+    ctx.save();
+    ctx.translate(W/2, btnY + btnH/2);
+    ctx.scale(pulse, pulse);
+    const grd = ctx.createLinearGradient(-btnW/2, 0, btnW/2, 0);
+    grd.addColorStop(0, '#ff7eb6'); grd.addColorStop(1, '#ff9f5f');
+    ctx.fillStyle = grd;
+    roundRect(-btnW/2, -btnH/2, btnW, btnH, 14); ctx.fill();
+    ctx.fillStyle = '#14213d';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillText('▶  KLIKNUTÍM SPUSTÍŠ HRU', 0, 2);
+    ctx.restore();
+
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawGameoverCard(){
+    const cardX = 80, cardY = 130, cardW = W-160, cardH = H-260;
+    ctx.fillStyle = '#ffffff';
+    roundRect(cardX, cardY, cardW, cardH, 18); ctx.fill();
+    ctx.strokeStyle = '#ff5252'; ctx.lineWidth = 4;
+    roundRect(cardX, cardY, cardW, cardH, 18); ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.fillStyle = '#b71c1c';
+    ctx.font = 'bold 46px sans-serif';
+    ctx.fillText('💀 KONEC HRY', W/2, cardY + 70);
+
+    ctx.fillStyle = '#222';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('Nemáš životy.', W/2, cardY + 125);
+
+    ctx.fillStyle = '#333';
+    ctx.font = '20px sans-serif';
+    ctx.fillText('Skóre: ' + score + '    ⭐ ' + starCount, W/2, cardY + 165);
+
+    ctx.fillStyle = '#6a89ff';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('👇 Kliknutím dole se vrátíš', W/2, cardY + cardH - 60);
+    ctx.fillText('do výběru her', W/2, cardY + cardH - 30);
+
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawWonCard(){
+    const cardX = 80, cardY = 130, cardW = W-160, cardH = H-260;
+    ctx.fillStyle = '#ffffff';
+    roundRect(cardX, cardY, cardW, cardH, 18); ctx.fill();
+    ctx.strokeStyle = '#2e7d32'; ctx.lineWidth = 4;
+    roundRect(cardX, cardY, cardW, cardH, 18); ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.fillStyle = '#2e7d32';
+    ctx.font = 'bold 46px sans-serif';
+    ctx.fillText('🎉 VYHRÁLS!', W/2, cardY + 70);
+
+    ctx.fillStyle = '#222';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('Všichni mimozemšťané zničeni!', W/2, cardY + 125);
+
+    ctx.fillStyle = '#333';
+    ctx.font = '20px sans-serif';
+    ctx.fillText('Skóre: ' + score + '    ⭐ ' + starCount, W/2, cardY + 165);
+
+    ctx.fillStyle = '#6a89ff';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('👇 Kliknutím dole se vrátíš', W/2, cardY + cardH - 60);
+    ctx.fillText('do výběru her', W/2, cardY + cardH - 30);
+
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawGame(){
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    drawStarfield();
 
     drawShip(player.x, player.y, player.w, player.h);
 
@@ -356,15 +380,27 @@ def _html_hry() -> str:
     ctx.font = '22px sans-serif';
     ctx.textBaseline = 'top';
     stars.forEach(s => ctx.fillText('⭐', s.x, s.y));
+    ctx.textBaseline = 'alphabetic';
+  }
 
-    // HUD
-    scoreEl.textContent = 'Skóre: ' + score;
-    livesEl.textContent = lives > 0 ? '❤️'.repeat(lives) : '💀';
-    starsEl.textContent = '⭐ ' + starCount;
-
-    if(state === 'gameover' || state === 'won'){
-      drawOverlay();
+  // ---------- MAIN DRAW ----------
+  function draw(){
+    if(state === 'intro'){
+      drawIntro();
+    } else {
+      drawGame();
+      if(state === 'gameover'){
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
+        drawGameoverCard();
+      } else if(state === 'won'){
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
+        drawWonCard();
+      }
     }
+
+    scoreEl.textContent = 'Skóre: ' + (state==='intro' ? 0 : score);
+    livesEl.textContent = (state==='intro') ? '❤️❤️❤️' : (lives > 0 ? '❤️'.repeat(lives) : '💀');
+    starsEl.textContent = '⭐ ' + (state==='intro' ? 0 : starCount);
   }
 
   function loop(){
@@ -373,9 +409,8 @@ def _html_hry() -> str:
     requestAnimationFrame(loop);
   }
 
-  resetGame();
+  initGameData();
   loop();
-
   setTimeout(()=>{ try { canvas.focus(); } catch(e){} }, 200);
 })();
 </script>
@@ -388,25 +423,8 @@ def render_hru():
         return
 
     st.subheader("👾 Space Invaders")
-    st.caption(
-        "1) Klikni do hry (zapne zvuk). 2) Šipky ← → = pohyb, Mezerník = střelba. "
-        "Máš 3 životy. Po ztrátě klikni do hry pro návrat zpět."
-    )
 
     components.html(_html_hry(), height=640, scrolling=False)
-
-    st.markdown(
-        """
-        <style>
-        button[kind="secondary"][data-testid^="baseButton"][key="si_back"] {
-            background: linear-gradient(90deg, #ff5252 0%, #ff9800 100%) !important;
-            color: white !important;
-            font-weight: 800 !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
 
     if st.button("⬅️ Zpět na výběr her", key="si_back", use_container_width=True):
         st.session_state.space_invaders = None

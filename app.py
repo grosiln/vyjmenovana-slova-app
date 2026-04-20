@@ -919,6 +919,9 @@ def main():
     st.session_state.menu_sekce = st.session_state.menu_sekce_widget
     st.session_state.sekce = st.session_state.menu_sekce
 
+    if st.session_state.sekce != "Minihry" and st.session_state.space_invaders:
+        st.session_state.space_invaders = None
+
     if st.session_state.sekce == "Domů":
         render_domu()
     elif st.session_state.sekce == "Dnešní skóre":
