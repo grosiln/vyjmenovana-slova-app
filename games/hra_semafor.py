@@ -70,10 +70,9 @@ def render_hru():
     if not hra:
         return
 
-    st.header("🚦 Semafor sprint")
-    st.write("Klikni na správnou akci. Po 2 sekundách naskočí další barva bez ztráty života.")
-    if hasattr(st, "autorefresh"):
-        st.autorefresh(interval=500, key="semafor_auto_refresh")
+    st.subheader("🚦 Semafor sprint")
+    st.caption("Po 2 sekundách naskočí další barva bez ztráty života.")
+    st.markdown("<meta http-equiv='refresh' content='0.5'>", unsafe_allow_html=True)
     _zpracuj_timeout()
     hra = st.session_state.get("semafor")
     if not hra:
@@ -106,6 +105,8 @@ def render_hru():
     if hra["feedback"]:
         if hra["feedback"].startswith("Správně"):
             st.success(hra["feedback"])
+        elif hra["feedback"].startswith("Další barva"):
+            st.info(hra["feedback"])
         else:
             st.error(hra["feedback"])
 

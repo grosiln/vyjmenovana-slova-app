@@ -65,10 +65,9 @@ def render_hru():
     if not hra:
         return
 
-    st.header("🌈 Lov barev")
-    st.write("Klikni na správnou barvu. Po 2 sekundách se hledaná barva změní bez ztráty života.")
-    if hasattr(st, "autorefresh"):
-        st.autorefresh(interval=500, key="lov_auto_refresh")
+    st.subheader("🌈 Lov barev")
+    st.caption("Po 2 sekundách se hledaná barva změní bez ztráty života.")
+    st.markdown("<meta http-equiv='refresh' content='0.5'>", unsafe_allow_html=True)
     _zpracuj_timeout()
     hra = st.session_state.get("lov_barev")
     if not hra:
@@ -96,6 +95,8 @@ def render_hru():
     if hra["feedback"]:
         if hra["feedback"].startswith("Trefa"):
             st.success(hra["feedback"])
+        elif hra["feedback"].startswith("Barva se změnila"):
+            st.info(hra["feedback"])
         else:
             st.error(hra["feedback"])
 

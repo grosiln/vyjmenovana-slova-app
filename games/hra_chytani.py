@@ -61,10 +61,9 @@ def render_hru():
     if not hra:
         return
 
-    st.header("🕹️ Chytání hvězdiček")
-    st.write("Klikni co nejrychleji na hvězdičku. Po 2 sekundách uteče jinam bez ztráty života.")
-    if hasattr(st, "autorefresh"):
-        st.autorefresh(interval=500, key="arcade_auto_refresh")
+    st.subheader("🕹️ Chytání hvězdiček")
+    st.caption("Po 2 sekundách hvězdička uteče jinam bez ztráty života.")
+    st.markdown("<meta http-equiv='refresh' content='0.5'>", unsafe_allow_html=True)
     _zpracuj_timeout()
     hra = st.session_state.get("arcade")
     if not hra:

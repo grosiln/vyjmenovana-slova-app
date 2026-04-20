@@ -730,7 +730,7 @@ def nastav_vzhled():
         .stApp {
             background: linear-gradient(180deg, #f8fbff 0%, #edf8ff 45%, #fff9ef 100%);
         }
-        .block-container {padding-top: 4.2rem; max-width: 1280px; padding-left: 2rem; padding-right: 2rem;}
+        .block-container {padding-top: 1.2rem; max-width: 1280px; padding-left: 1.4rem; padding-right: 1.4rem;}
         h1, h2, h3 {font-weight: 800 !important;}
         h1 {font-size: clamp(1.7rem, 2.6vw, 2.45rem) !important;}
         h2 {font-size: clamp(1.45rem, 2.2vw, 1.9rem) !important;}
@@ -749,7 +749,7 @@ def nastav_vzhled():
         .stButton > button {
             font-size: clamp(1.05rem, 1.7vw, 1.35rem) !important;
             font-weight: 700 !important;
-            min-height: clamp(2.9rem, 6.5vh, 3.4rem) !important;
+            min-height: clamp(2.35rem, 5.4vh, 2.9rem) !important;
             border-radius: 14px !important;
             border: none !important;
             background: linear-gradient(90deg, #ff7eb6 0%, #ff9f5f 100%) !important;
@@ -821,9 +821,9 @@ def nastav_vzhled():
         /* Tablet */
         @media (max-width: 1024px) {
             .block-container {
-                padding-top: 3.8rem;
-                padding-left: 1.2rem;
-                padding-right: 1.2rem;
+                padding-top: 0.95rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
             }
             .feature-card, .letter-card, .word-box {
                 border-radius: 14px;
@@ -833,7 +833,7 @@ def nastav_vzhled():
         /* Mobil */
         @media (max-width: 768px) {
             .block-container {
-                padding-top: 3.2rem;
+                padding-top: 0.75rem;
                 padding-left: 0.8rem;
                 padding-right: 0.8rem;
             }
@@ -856,7 +856,7 @@ def nastav_vzhled():
         /* Velmi malé displeje */
         @media (max-width: 480px) {
             .block-container {
-                padding-top: 2.6rem;
+                padding-top: 0.6rem;
                 padding-left: 0.55rem;
                 padding-right: 0.55rem;
             }
