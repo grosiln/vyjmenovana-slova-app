@@ -3,7 +3,7 @@ import streamlit.components.v1 as components
 
 
 def spustit_hru():
-    st.session_state.space_invaders = {"aktivni": True}
+    st.session_state.space_invaders = {"aktivni": True, "start_potvrzen": False}
 
 
 def _html_hry() -> str:
@@ -41,6 +41,8 @@ def _html_hry() -> str:
   document.addEventListener('mousedown', ensureAudio);
   document.addEventListener('keydown', ensureAudio);
   document.addEventListener('touchstart', ensureAudio);
+  // Zkusime zapnout audio hned (user uz klikl v Streamlitu na START)
+  try { ensureAudio(); } catch(e){}
 
   function tone(freq, dur, type='square', vol=0.08){
     if(!audioCtx) return;
@@ -71,8 +73,8 @@ def _html_hry() -> str:
   function sndStar(){ tone(1200, 0.08, 'sine', 0.12); tone(1700, 0.1, 'sine', 0.1); }
 
   // ---------- STATE ----------
-  // 'intro' | 'playing' | 'gameover' | 'won'
-  let state = 'intro';
+  // 'playing' | 'gameover' | 'won'
+  let state = 'playing';
   let player, bullets, enemyBullets, enemies, stars;
   let dir, score, lives, starCount, tick, shootCd;
 
@@ -97,23 +99,13 @@ def _html_hry() -> str:
     dir = 1;
     score = 0; lives = 3; starCount = 0;
     tick = 0; shootCd = 0;
-  }
-  function startGame(){
-    initGameData();
     state = 'playing';
   }
 
   // ---------- INPUT ----------
   const keys = {};
   canvas.tabIndex = 0;
-  canvas.addEventListener('mousedown', ()=>{
-    canvas.focus();
-    ensureAudio();
-    if(state === 'intro'){
-      startGame();
-    }
-    // na gameover / won klik nic nemeni - uzivatel musi pouzit tlacitko v Streamlitu
-  });
+  canvas.addEventListener('mousedown', ()=>{ canvas.focus(); ensureAudio(); });
   canvas.addEventListener('keydown', (e)=>{
     if(['ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
     keys[e.code] = true;
@@ -203,7 +195,7 @@ def _html_hry() -> str:
     }
   }
 
-  // ---------- DRAW helpers ----------
+  // ---------- DRAW ----------
   function drawShip(x, y, w, h){
     ctx.fillStyle = '#4fc3f7'; ctx.fillRect(x, y+6, w, h-6);
     ctx.fillStyle = '#81d4fa'; ctx.fillRect(x + w/2 - 5, y, 10, 8);
@@ -238,67 +230,6 @@ def _html_hry() -> str:
     ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
     ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
     ctx.closePath();
-  }
-
-  // ---------- SCREENS ----------
-  function drawIntro(){
-    // cerne pozadi s hvezdami
-    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-    drawStarfield();
-
-    // Bila karta s instrukcemi
-    const cardX = 60, cardY = 60, cardW = W-120, cardH = H-120;
-    ctx.fillStyle = '#ffffff';
-    roundRect(cardX, cardY, cardW, cardH, 18); ctx.fill();
-    ctx.strokeStyle = '#6a89ff'; ctx.lineWidth = 3;
-    roundRect(cardX, cardY, cardW, cardH, 18); ctx.stroke();
-
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Titulek
-    ctx.fillStyle = '#14213d';
-    ctx.font = 'bold 40px sans-serif';
-    ctx.fillText('👾 Space Invaders', W/2, cardY + 55);
-
-    // Instrukce - radky
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.fillText('Jak se hraje:', W/2, cardY + 110);
-
-    ctx.font = '20px sans-serif';
-    ctx.fillStyle = '#222';
-    const lines = [
-      '⬅ ➡  šipky = pohyb raketky',
-      '␣   Mezerník = střelba',
-      '❤️ ❤️ ❤️   Máš 3 životy',
-      '⭐   Sestřel padající hvězdičky pro bonus',
-      '👾   Znič všechny mimozemšťany'
-    ];
-    let ly = cardY + 150;
-    for(const line of lines){
-      ctx.fillText(line, W/2, ly);
-      ly += 34;
-    }
-
-    // Start button - zluto-oranzovy
-    const btnW = 360, btnH = 64;
-    const btnX = W/2 - btnW/2, btnY = cardY + cardH - btnH - 30;
-    const pulse = 1 + Math.sin(tick * 0.08) * 0.03;
-    ctx.save();
-    ctx.translate(W/2, btnY + btnH/2);
-    ctx.scale(pulse, pulse);
-    const grd = ctx.createLinearGradient(-btnW/2, 0, btnW/2, 0);
-    grd.addColorStop(0, '#ff7eb6'); grd.addColorStop(1, '#ff9f5f');
-    ctx.fillStyle = grd;
-    roundRect(-btnW/2, -btnH/2, btnW, btnH, 14); ctx.fill();
-    ctx.fillStyle = '#14213d';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillText('▶  KLIKNUTÍM SPUSTÍŠ HRU', 0, 2);
-    ctx.restore();
-
-    ctx.textAlign = 'start';
-    ctx.textBaseline = 'alphabetic';
   }
 
   function drawGameoverCard(){
@@ -366,41 +297,31 @@ def _html_hry() -> str:
   function drawGame(){
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
     drawStarfield();
-
     drawShip(player.x, player.y, player.w, player.h);
-
     ctx.fillStyle = '#fff200';
     bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
-
     ctx.fillStyle = '#ff5252';
     enemyBullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
-
     enemies.forEach(e => { if(e.alive) drawAlien(e); });
-
     ctx.font = '22px sans-serif';
     ctx.textBaseline = 'top';
     stars.forEach(s => ctx.fillText('⭐', s.x, s.y));
     ctx.textBaseline = 'alphabetic';
   }
 
-  // ---------- MAIN DRAW ----------
   function draw(){
-    if(state === 'intro'){
-      drawIntro();
-    } else {
-      drawGame();
-      if(state === 'gameover'){
-        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
-        drawGameoverCard();
-      } else if(state === 'won'){
-        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
-        drawWonCard();
-      }
+    drawGame();
+    if(state === 'gameover'){
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
+      drawGameoverCard();
+    } else if(state === 'won'){
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
+      drawWonCard();
     }
 
-    scoreEl.textContent = 'Skóre: ' + (state==='intro' ? 0 : score);
-    livesEl.textContent = (state==='intro') ? '❤️❤️❤️' : (lives > 0 ? '❤️'.repeat(lives) : '💀');
-    starsEl.textContent = '⭐ ' + (state==='intro' ? 0 : starCount);
+    scoreEl.textContent = 'Skóre: ' + score;
+    livesEl.textContent = lives > 0 ? '❤️'.repeat(lives) : '💀';
+    starsEl.textContent = '⭐ ' + starCount;
   }
 
   function loop(){
@@ -422,10 +343,77 @@ def render_hru():
     if not hra:
         return
 
-    st.subheader("👾 Space Invaders")
+    if not hra.get("start_potvrzen"):
+        _render_uvitaci_okno()
+        return
 
+    st.subheader("👾 Space Invaders")
     components.html(_html_hry(), height=640, scrolling=False)
 
     if st.button("⬅️ Zpět na výběr her", key="si_back", use_container_width=True):
         st.session_state.space_invaders = None
         st.rerun()
+
+
+def _render_uvitaci_okno():
+    st.markdown(
+        """
+        <div style="
+            background: linear-gradient(135deg, #1a237e 0%, #283593 55%, #5e35b1 100%);
+            color: #fff;
+            padding: 2rem 2rem 1.6rem 2rem;
+            border-radius: 22px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+            text-align: center;
+            max-width: 720px;
+            margin: 0.5rem auto 1.2rem auto;
+            border: 3px solid #ffd54f;
+        ">
+            <div style="font-size: 3.4rem; line-height: 1;">👾</div>
+            <h2 style="color: #fff !important; margin: 0.6rem 0 0.4rem 0; font-size: 2.2rem;">
+                Space Invaders
+            </h2>
+            <p style="color: #ffd54f; font-weight: 700; font-size: 1.15rem; margin: 0 0 1.1rem 0;">
+                Jak se hraje
+            </p>
+            <div style="
+                background: rgba(255,255,255,0.08);
+                border-radius: 14px;
+                padding: 0.9rem 1.2rem;
+                text-align: left;
+                max-width: 480px;
+                margin: 0 auto 1.2rem auto;
+                font-size: 1.08rem;
+                line-height: 1.7;
+            ">
+                ⬅ ➡ &nbsp;&nbsp;Šipky = pohyb raketky<br>
+                ␣ &nbsp;&nbsp;Mezerník = střelba<br>
+                ❤️ ❤️ ❤️ &nbsp;&nbsp;Máš 3 životy<br>
+                ⭐ &nbsp;&nbsp;Sestřel padající hvězdičky pro bonus<br>
+                👾 &nbsp;&nbsp;Znič všechny mimozemšťany
+            </div>
+            <p style="color: #fff; font-weight: 600; margin: 0 0 0.2rem 0;">
+                🔊 Kliknutím na tlačítko dole se zapne zvuk a hra začne.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        if st.button(
+            "▶ START HRY (zapne zvuk)",
+            key="si_start_btn",
+            use_container_width=True,
+            type="primary",
+        ):
+            st.session_state.space_invaders["start_potvrzen"] = True
+            st.rerun()
+        if st.button(
+            "⬅️ Zpět na výběr her",
+            key="si_start_cancel",
+            use_container_width=True,
+        ):
+            st.session_state.space_invaders = None
+            st.rerun()
