@@ -257,6 +257,12 @@ def init_state():
         st.session_state.lov_barev = None
 
 
+def nastav_sekci(cil):
+    st.session_state.sekce = cil
+    st.session_state.menu_sekce = cil
+    st.session_state.menu_sekce_widget = cil
+
+
 def priprav_test_iy(vyber):
     if vyber == "Všechna":
         vyj_slova = [s for arr in TEST_IY_PO_PISMENE.values() for s in arr]
@@ -423,17 +429,14 @@ def render_domu():
     s1, s2, s3 = st.columns(3)
     if s1.button("📝 Doplň i/y", use_container_width=True):
         priprav_test_iy("Všechna")
-        st.session_state.sekce = "Test"
-        st.session_state.menu_sekce = "Test"
+        nastav_sekci("Test")
         st.rerun()
     if s2.button("🔎 Poznávačka", use_container_width=True):
         priprav_poznavacku("Všechna")
-        st.session_state.sekce = "Test"
-        st.session_state.menu_sekce = "Test"
+        nastav_sekci("Test")
         st.rerun()
     if s3.button("📚 Přehled slov", use_container_width=True):
-        st.session_state.sekce = "Přehled slov"
-        st.session_state.menu_sekce = "Přehled slov"
+        nastav_sekci("Přehled slov")
         st.rerun()
 
     st.info("💡 Tip: Nejdřív otevři Přehled slov, pak spusť test.")
@@ -458,13 +461,11 @@ def render_prehled():
         c1, c2 = st.columns(2)
         if c1.button(f"📝 Trénovat i/y po {p}", key=f"iy_{p}", use_container_width=True):
             priprav_test_iy(p)
-            st.session_state.sekce = "Test"
-            st.session_state.menu_sekce = "Test"
+            nastav_sekci("Test")
             st.rerun()
         if c2.button(f"🔎 Poznávačka po {p}", key=f"pozn_{p}", use_container_width=True):
             priprav_poznavacku(p)
-            st.session_state.sekce = "Test"
-            st.session_state.menu_sekce = "Test"
+            nastav_sekci("Test")
             st.rerun()
 
 
@@ -488,8 +489,7 @@ def render_test():
         st.success(zprava_za_vysledek(uspesnost))
         if st.button("Nová sada otázek"):
             st.session_state.test = None
-            st.session_state.sekce = "Domů"
-            st.session_state.menu_sekce = "Domů"
+            nastav_sekci("Domů")
             st.rerun()
         return
 
@@ -584,8 +584,7 @@ def render_statistiky():
 
     if st.button("Začít nový test hned teď"):
         priprav_test_iy("Všechna")
-        st.session_state.sekce = "Test"
-        st.session_state.menu_sekce = "Test"
+        nastav_sekci("Test")
         st.rerun()
 
 
@@ -767,13 +766,11 @@ def render_dnesni_skore():
     c1, c2 = st.columns(2)
     if c1.button("📝 Spustit Doplň i/y", use_container_width=True):
         priprav_test_iy("Všechna")
-        st.session_state.sekce = "Test"
-        st.session_state.menu_sekce = "Test"
+        nastav_sekci("Test")
         st.rerun()
     if c2.button("🔎 Spustit Poznávačku", use_container_width=True):
         priprav_poznavacku("Všechna")
-        st.session_state.sekce = "Test"
-        st.session_state.menu_sekce = "Test"
+        nastav_sekci("Test")
         st.rerun()
 
 
@@ -934,25 +931,21 @@ def main():
     st.sidebar.title("🎯 Menu aplikace")
     sekce_options = ["Domů", "Dnešní skóre", "Přehled slov", "Statistiky", "Test", "Minihry"]
     if st.session_state.menu_sekce not in sekce_options:
-        st.session_state.menu_sekce = "Domů"
+        nastav_sekci("Domů")
     if st.session_state.sekce not in sekce_options:
-        st.session_state.sekce = "Domů"
+        nastav_sekci("Domů")
     if st.session_state.menu_sekce_widget not in sekce_options:
-        st.session_state.menu_sekce_widget = st.session_state.menu_sekce
-    elif st.session_state.menu_sekce_widget != st.session_state.menu_sekce:
         st.session_state.menu_sekce_widget = st.session_state.menu_sekce
 
     st.sidebar.markdown("### 🎮 Spuštění testu")
     vyber = st.sidebar.selectbox("Písmeno pro test", PISMENA, key="vyber_pismeno")
     if st.sidebar.button("Spustit test Doplň i/y", use_container_width=True):
         priprav_test_iy(vyber)
-        st.session_state.sekce = "Test"
-        st.session_state.menu_sekce = "Test"
+        nastav_sekci("Test")
         st.rerun()
     if st.sidebar.button("Spustit Poznávačku", use_container_width=True):
         priprav_poznavacku(vyber)
-        st.session_state.sekce = "Test"
-        st.session_state.menu_sekce = "Test"
+        nastav_sekci("Test")
         st.rerun()
 
     st.sidebar.radio("Sekce", sekce_options, key="menu_sekce_widget")
