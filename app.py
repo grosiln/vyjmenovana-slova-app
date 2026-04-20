@@ -588,26 +588,78 @@ def render_statistiky():
 
 
 def render_minihry():
-    st.header("🎮 Minihry - odměna")
-    st.write("Tady se už neučíš. Tady si jen hraješ.")
+    arcade_aktivni = bool(st.session_state.arcade and st.session_state.arcade.get("aktivni"))
+    semafor_aktivni = bool(st.session_state.semafor and st.session_state.semafor.get("aktivni"))
+    lov_aktivni = bool(st.session_state.lov_barev and st.session_state.lov_barev.get("aktivni"))
+    herni_rezim = arcade_aktivni or semafor_aktivni or lov_aktivni
 
-    ziskane = ziskane_hvezdy_celkem()
-    dostupne = dostupne_hvezdy()
-    st.markdown(
-        f"""
-        <div class="star-row">
-            <div class="star-counter-box">
-                <div class="star-label">⭐ Získané celkem</div>
-                <div class="star-number">{ziskane}</div>
+    if herni_rezim:
+        st.markdown(
+            """
+            <style>
+            [data-testid="stSidebar"], [data-testid="collapsedControl"], header[data-testid="stHeader"] {
+                display: none !important;
+            }
+            .block-container {
+                max-width: 100vw !important;
+                padding-top: 0.2rem !important;
+                padding-left: 0.55rem !important;
+                padding-right: 0.55rem !important;
+            }
+            [data-testid="stMetric"] {
+                padding: 0.35rem 0.5rem !important;
+            }
+            [data-testid="stMetricLabel"] p {
+                font-size: clamp(0.82rem, 1.6vw, 1.05rem) !important;
+            }
+            [data-testid="stMetricValue"] {
+                font-size: clamp(1.05rem, 2.5vw, 1.45rem) !important;
+            }
+            .stButton > button {
+                min-height: clamp(2.1rem, 8vh, 3.1rem) !important;
+                font-size: clamp(1.02rem, 2.3vw, 1.5rem) !important;
+                padding-top: 0.2rem !important;
+                padding-bottom: 0.2rem !important;
+            }
+            .word-box {
+                padding: 0.35rem 0.45rem !important;
+                margin-bottom: 0.35rem !important;
+                font-size: clamp(1.05rem, 2.8vw, 1.65rem) !important;
+            }
+            @media (max-height: 840px) {
+                .block-container {
+                    padding-top: 0.12rem !important;
+                }
+                .stButton > button {
+                    min-height: clamp(1.95rem, 7.2vh, 2.7rem) !important;
+                    font-size: clamp(0.95rem, 2vw, 1.22rem) !important;
+                }
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.header("🎮 Minihry - odměna")
+        st.write("Tady se už neučíš. Tady si jen hraješ.")
+
+        ziskane = ziskane_hvezdy_celkem()
+        dostupne = dostupne_hvezdy()
+        st.markdown(
+            f"""
+            <div class="star-row">
+                <div class="star-counter-box">
+                    <div class="star-label">⭐ Získané celkem</div>
+                    <div class="star-number">{ziskane}</div>
+                </div>
+                <div class="star-counter-box">
+                    <div class="star-label">⭐ Dostupné teď</div>
+                    <div class="star-number">{dostupne}</div>
+                </div>
             </div>
-            <div class="star-counter-box">
-                <div class="star-label">⭐ Dostupné teď</div>
-                <div class="star-number">{dostupne}</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
 
     if st.session_state.arcade and st.session_state.arcade.get("hotovo"):
         render_vysledek()
