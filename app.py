@@ -5,16 +5,9 @@ from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
-from games.hra_chytani import render_hru, render_vysledek, spustit_hru
-from games.hra_lov_barev import (
-    render_hru as render_hru_lov_barev,
-    render_vysledek as render_vysledek_lov_barev,
-    spustit_hru as spustit_hru_lov_barev,
-)
-from games.hra_semafor import (
-    render_hru as render_hru_semafor,
-    render_vysledek as render_vysledek_semafor,
-    spustit_hru as spustit_hru_semafor,
+from games.hra_space_invaders import (
+    render_hru as render_hru_space,
+    spustit_hru as spustit_hru_space,
 )
 
 
@@ -264,6 +257,8 @@ def init_state():
         st.session_state.test = None
     if "vyber_pismeno" not in st.session_state:
         st.session_state.vyber_pismeno = "Všechna"
+    if "space_invaders" not in st.session_state:
+        st.session_state.space_invaders = None
     if "arcade" not in st.session_state:
         st.session_state.arcade = None
     if "semafor" not in st.session_state:
@@ -604,125 +599,65 @@ def render_statistiky():
 
 
 def render_minihry():
-    arcade_aktivni = bool(st.session_state.arcade and st.session_state.arcade.get("aktivni"))
-    semafor_aktivni = bool(st.session_state.semafor and st.session_state.semafor.get("aktivni"))
-    lov_aktivni = bool(st.session_state.lov_barev and st.session_state.lov_barev.get("aktivni"))
-    if not (arcade_aktivni or semafor_aktivni or lov_aktivni):
-        st.header("🎮 Minihry - odměna")
-        st.write("Tady se už neučíš. Tady si jen hraješ.")
+    if st.session_state.space_invaders and st.session_state.space_invaders.get("aktivni"):
+        render_hru_space()
+        return
 
-        ziskane = ziskane_hvezdy_celkem()
-        dostupne = dostupne_hvezdy()
-        st.markdown(
-            f"""
-            <div class="star-row">
-                <div class="star-counter-box">
-                    <div class="star-label">⭐ Získané celkem</div>
-                    <div class="star-number">{ziskane}</div>
-                </div>
-                <div class="star-counter-box">
-                    <div class="star-label">⭐ Dostupné teď</div>
-                    <div class="star-number">{dostupne}</div>
-                </div>
+    st.header("🎮 Minihry - odměna")
+    st.write("Tady se už neučíš. Tady si jen hraješ.")
+
+    ziskane = ziskane_hvezdy_celkem()
+    dostupne = dostupne_hvezdy()
+    st.markdown(
+        f"""
+        <div class="star-row">
+            <div class="star-counter-box">
+                <div class="star-label">⭐ Získané celkem</div>
+                <div class="star-number">{ziskane}</div>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        with st.expander("🧪 Testovací hvězdičky (pro vývoj)", expanded=False):
-            st.caption("Rychlé přidání hvězdiček jen pro test miniher.")
-            t1, t2, t3 = st.columns(3)
-            if t1.button("+5 ⭐", key="test_plus_5", use_container_width=True):
-                pridej_test_hvezdy(5)
-                st.success("Přidáno 5 hvězdiček pro testování.")
-                st.rerun()
-            if t2.button("+20 ⭐", key="test_plus_20", use_container_width=True):
-                pridej_test_hvezdy(20)
-                st.success("Přidáno 20 hvězdiček pro testování.")
-                st.rerun()
-            if t3.button("Obnovit utracené", key="test_reset_spent", use_container_width=True):
-                vynuluj_utracene_hvezdy()
-                st.success("Utracené hvězdičky byly vynulovány.")
-                st.rerun()
-
-    if st.session_state.arcade and st.session_state.arcade.get("hotovo"):
-        render_vysledek()
-        return
-
-    if st.session_state.arcade and st.session_state.arcade.get("aktivni"):
-        render_hru()
-        return
-
-    if st.session_state.semafor and st.session_state.semafor.get("hotovo"):
-        render_vysledek_semafor()
-        return
-
-    if st.session_state.semafor and st.session_state.semafor.get("aktivni"):
-        render_hru_semafor()
-        return
-
-    if st.session_state.lov_barev and st.session_state.lov_barev.get("hotovo"):
-        render_vysledek_lov_barev()
-        return
-
-    if st.session_state.lov_barev and st.session_state.lov_barev.get("aktivni"):
-        render_hru_lov_barev()
-        return
+            <div class="star-counter-box">
+                <div class="star-label">⭐ Dostupné teď</div>
+                <div class="star-number">{dostupne}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    with st.expander("🧪 Testovací hvězdičky (pro vývoj)", expanded=False):
+        st.caption("Rychlé přidání hvězdiček jen pro test miniher.")
+        t1, t2, t3 = st.columns(3)
+        if t1.button("+5 ⭐", key="test_plus_5", use_container_width=True):
+            pridej_test_hvezdy(5)
+            st.success("Přidáno 5 hvězdiček pro testování.")
+            st.rerun()
+        if t2.button("+20 ⭐", key="test_plus_20", use_container_width=True):
+            pridej_test_hvezdy(20)
+            st.success("Přidáno 20 hvězdiček pro testování.")
+            st.rerun()
+        if t3.button("Obnovit utracené", key="test_reset_spent", use_container_width=True):
+            vynuluj_utracene_hvezdy()
+            st.success("Utracené hvězdičky byly vynulovány.")
+            st.rerun()
 
     st.markdown("### Vyber minihru")
-    r1, r2, r3 = st.columns(3)
-
-    with r1:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>🕹️ Chytání hvězdiček</h3>
-                <p>Chytej hvězdu v mřížce.<br>Cena: ⭐⭐⭐<br>Životy: ❤️❤️❤️<br>Kola: 18</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("Hrát: Chytání hvězdiček (3 ⭐)", key="menu_chytani", use_container_width=True):
-            if utrat_hvezdy(3):
-                st.session_state.semafor = None
-                st.session_state.lov_barev = None
-                spustit_hru(zivoty=3, kola=18)
-                st.rerun()
-            st.error("Nemáš dost hvězdiček.")
-
-    with r2:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>🚦 Semafor sprint</h3>
-                <p>Reaguj na barvy semaforu.<br>Cena: ⭐⭐⭐⭐<br>Životy: ❤️❤️❤️❤️<br>Kola: 16</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("Hrát: Semafor sprint (4 ⭐)", key="menu_semafor", use_container_width=True):
-            if utrat_hvezdy(4):
-                st.session_state.arcade = None
-                st.session_state.lov_barev = None
-                spustit_hru_semafor(zivoty=4, kola=16)
-                st.rerun()
-            st.error("Nemáš dost hvězdiček.")
-
-    with r3:
-        st.markdown(
-            """
-            <div class="feature-card">
-                <h3>🌈 Lov barev</h3>
-                <p>Najdi správnou barvu.<br>Cena: ⭐⭐⭐⭐⭐<br>Životy: ❤️❤️❤️❤️❤️<br>Kola: 20</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("Hrát: Lov barev (5 ⭐)", key="menu_lov_barev", use_container_width=True):
-            if utrat_hvezdy(5):
-                st.session_state.arcade = None
-                st.session_state.semafor = None
-                spustit_hru_lov_barev(zivoty=5, kola=20)
-                st.rerun()
+    st.markdown(
+        """
+        <div class="feature-card">
+            <h3>👾 Space Invaders</h3>
+            <p>
+                Jednoduchá klasika - ovládej raketku šipkami a stříle mezerníkem.<br>
+                Ničte mimozemšťany a sestřelujte padající hvězdičky jako bonus.<br>
+                Cena: ⭐⭐⭐
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("Hrát: Space Invaders (3 ⭐)", key="menu_space", use_container_width=True):
+        if utrat_hvezdy(3):
+            spustit_hru_space()
+            st.rerun()
+        else:
             st.error("Nemáš dost hvězdiček.")
 
     st.info("Hry jsou odměna za trénink. Za každých 10 správných odpovědí získáš 1 hvězdičku.")
