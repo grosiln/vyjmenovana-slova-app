@@ -1,5 +1,6 @@
 import json
 import random
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from games.hra_chytani import render_hru, render_vysledek, spustit_hru
 
 
 SOUBOR_STATISTIK = Path("statistiky_vyjmenovana_slova.json")
+SLOZKA_OBRAZKU_SLOVA = Path("assets/images/slova")
 PISMENA = ["Všechna", "B", "L", "M", "P", "S", "V", "Z"]
 
 VYJMENOVANA = {
@@ -114,6 +116,22 @@ NEVYJMENOVANA_POZNAVACKA = [
     "míč",
 ]
 
+EMOJI_NAPOVEDA = {
+    "býk": "🐂",
+    "kobyla": "🐎",
+    "lyže": "🎿",
+    "myš": "🐭",
+    "vydra": "🦦",
+    "pytel": "🧺",
+    "kopyto": "🐾",
+    "sýkora": "🐦",
+    "netopýr": "🦇",
+    "hmyz": "🐞",
+    "jazyk": "👅",
+    "brzy": "⏰",
+    "vysoký": "📏",
+}
+
 
 def maskuj_i_y(slovo: str):
     for i, ch in enumerate(slovo):
@@ -122,6 +140,22 @@ def maskuj_i_y(slovo: str):
         if ch in "yýYÝ":
             return slovo[:i] + "_" + slovo[i + 1 :], "y"
     return slovo, ""
+
+
+def normalizuj_nazev_slova(slovo: str):
+    zaklad = slovo.split(" (")[0].strip().lower()
+    bez_dia = unicodedata.normalize("NFKD", zaklad).encode("ascii", "ignore").decode("ascii")
+    bez_dia = bez_dia.replace(" ", "_").replace("-", "_")
+    return "".join(ch for ch in bez_dia if ch.isalnum() or ch == "_")
+
+
+def najdi_obrazek_ke_slovu(slovo: str):
+    slug = normalizuj_nazev_slova(slovo)
+    for pripona in (".png", ".jpg", ".jpeg", ".webp"):
+        cesta = SLOZKA_OBRAZKU_SLOVA / f"{slug}{pripona}"
+        if cesta.exists():
+            return cesta
+    return None
 
 
 def prazdne_statistiky():
@@ -435,7 +469,21 @@ def render_test():
     if test["typ"] == "iy":
         maska, _ = maskuj_i_y(slovo)
         st.header(f"📝 Doplň i/y ({progress})")
-        st.markdown(f"<div class='word-box'>Slovo: <b>{maska}</b></div>", unsafe_allow_html=True)
+        obrazek = najdi_obrazek_ke_slovu(slovo)
+        emoji = EMOJI_NAPOVEDA.get(slovo, "🧩")
+        cword, cimg = st.columns([2, 1])
+        with cword:
+            st.markdown(f"<div class='word-box'>Slovo: <b>{maska}</b></div>", unsafe_allow_html=True)
+        with cimg:
+            if obrazek:
+                st.image(str(obrazek), use_container_width=True)
+                st.caption("Obrázková nápověda")
+            else:
+                st.markdown(
+                    f"<div class='hint-emoji-box'>{emoji}</div>",
+                    unsafe_allow_html=True,
+                )
+                st.caption("Vizuální nápověda")
         c1, c2 = st.columns(2)
         if c1.button("🔵 i", use_container_width=True):
             vyhodnot("i")
@@ -690,6 +738,18 @@ def nastav_vzhled():
             text-align: center;
             border: 3px solid #9ec5ff;
             background: #f4f9ff;
+        }
+        .hint-emoji-box {
+            font-size: clamp(2.2rem, 5vw, 3.4rem);
+            text-align: center;
+            background: linear-gradient(135deg, #fff8dd 0%, #ffeeb1 100%);
+            border: 2px solid #ffd97a;
+            border-radius: 14px;
+            padding: 0.6rem;
+            min-height: 84px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         /* Tablet */
         @media (max-width: 1024px) {
