@@ -246,6 +246,42 @@ def zprava_za_vysledek(uspesnost):
     return "💪 Nic se neděje, trénink dělá mistra. Zkus další kolo!"
 
 
+def odznak_za_uspesnost(uspesnost):
+    if uspesnost >= 90:
+        return "🥇 Zlatý odznak"
+    if uspesnost >= 75:
+        return "🥈 Stříbrný odznak"
+    return "🥉 Bronzový odznak"
+
+
+def dnesni_skore():
+    data = nacti_statistiky()
+    dnes = datetime.now().strftime("%d.%m.%Y")
+    denni = [z for z in data.get("historie", []) if str(z.get("datum", "")).startswith(dnes)]
+    otazek = sum(int(z.get("otazek", 0)) for z in denni)
+    spravne = sum(int(z.get("spravne", 0)) for z in denni)
+    uspesnost = round((spravne / otazek) * 100, 1) if otazek else 0.0
+    return {"pocet_testu": len(denni), "otazek": otazek, "spravne": spravne, "uspesnost": uspesnost}
+
+
+def hvezdicky_za_spravne(pocet_spravnych):
+    hvezdy = pocet_spravnych // 10
+    dalsi_meta = 10 - (pocet_spravnych % 10)
+    if dalsi_meta == 10:
+        dalsi_meta = 0
+    return hvezdy, dalsi_meta
+
+
+def text_hvezdicek(pocet_hvezd):
+    if pocet_hvezd <= 0:
+        return "Zatím žádná hvězdička"
+    max_zobrazit = min(pocet_hvezd, 10)
+    text = "⭐" * max_zobrazit
+    if pocet_hvezd > 10:
+        text += f" +{pocet_hvezd - 10}"
+    return text
+
+
 def render_domu():
     st.markdown(
         """
@@ -291,6 +327,37 @@ def render_domu():
             unsafe_allow_html=True,
         )
 
+    st.markdown("### ⚡ Rychlý start")
+    s1, s2, s3 = st.columns(3)
+    if s1.button("📝 Doplň i/y", use_container_width=True):
+        priprav_test_iy("Všechna")
+        st.session_state.sekce = "Test"
+        st.session_state.menu_sekce = "Test"
+        st.rerun()
+    if s2.button("🔎 Poznávačka", use_container_width=True):
+        priprav_poznavacku("Všechna")
+        st.session_state.sekce = "Test"
+        st.session_state.menu_sekce = "Test"
+        st.rerun()
+    if s3.button("📚 Přehled slov", use_container_width=True):
+        st.session_state.sekce = "Přehled slov"
+        st.session_state.menu_sekce = "Přehled slov"
+        st.rerun()
+
+    dnes = dnesni_skore()
+    st.markdown("### 🗓️ Dnešní skóre")
+    d1, d2, d3, d4 = st.columns(4)
+    d1.metric("Testů dnes", dnes["pocet_testu"])
+    d2.metric("Otázek dnes", dnes["otazek"])
+    d3.metric("Správně dnes", dnes["spravne"])
+    d4.metric("Úspěšnost dnes", f"{dnes['uspesnost']} %")
+    hvezdy, chybi = hvezdicky_za_spravne(dnes["spravne"])
+    st.markdown(f"### ⭐ Hvězdičky dnes: {text_hvezdicek(hvezdy)}")
+    if chybi > 0:
+        st.caption(f"Do další hvězdičky chybí už jen {chybi} správných odpovědí.")
+    else:
+        st.caption("Skvělé! Zrovna jsi získal(a) další hvězdičku.")
+
     st.info("💡 Tip: Nejdřív otevři Přehled slov, pak spusť test.")
 
 
@@ -324,6 +391,7 @@ def render_test():
         c1.metric("Otázek", celkem)
         c2.metric("Správně", test["spravne"])
         c3.metric("Úspěšnost", f"{uspesnost} %")
+        st.markdown(f"### {odznak_za_uspesnost(uspesnost)}")
         st.success(zprava_za_vysledek(uspesnost))
         if st.button("Nová sada otázek"):
             st.session_state.test = None
@@ -378,6 +446,13 @@ def render_statistiky():
     c1.metric("Celkem otázek", celkem)
     c2.metric("Celkem správně", spravne)
     c3.metric("Úspěšnost", f"{usp} %")
+    st.markdown(f"### Aktuální odznak: {odznak_za_uspesnost(usp)}")
+    hvezdy_celkem, chybi_celkem = hvezdicky_za_spravne(spravne)
+    st.markdown(f"### ⭐ Hvězdičky celkem: {text_hvezdicek(hvezdy_celkem)}")
+    if chybi_celkem > 0:
+        st.caption(f"Do další hvězdičky chybí {chybi_celkem} správných odpovědí.")
+    else:
+        st.caption("Paráda! Máš přesně hranici pro novou hvězdičku.")
     st.write(f"Celkem špatně: {spatne}")
 
     historie = list(reversed(data.get("historie", [])))
@@ -389,6 +464,12 @@ def render_statistiky():
     if st.button("Vymazat statistiky"):
         uloz_statistiky(prazdne_statistiky())
         st.success("Statistiky byly smazány.")
+        st.rerun()
+
+    if st.button("Začít nový test hned teď"):
+        priprav_test_iy("Všechna")
+        st.session_state.sekce = "Test"
+        st.session_state.menu_sekce = "Test"
         st.rerun()
 
 
