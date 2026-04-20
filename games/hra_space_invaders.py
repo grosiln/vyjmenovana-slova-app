@@ -139,14 +139,59 @@ def _html_hry() -> str:
   }
 
   // ---------- NAVIGACE ZPET DO STREAMLITU ----------
+  // Musime navigovat TOP okno (Streamlit stranku), ne tento iframe.
+  // Pokud zmenime jen location tohoto iframu, srcdoc se znovu vyhodnoti
+  // a hra se nahodne spusti znovu - to je presne to, co nechceme.
   function navigateToParent(){
     if(navigated) return;
     navigated = true;
-    const won = (state === 'won') ? '&si_won=1' : '';
-    const qs = '?si_finished=1&si_score=' + score + '&si_stars=' + starCount + won;
-    try { window.top.location.search = qs; return; } catch(e){}
-    try { window.parent.location.search = qs; return; } catch(e){}
-    try { window.location.search = qs; } catch(e){}
+    const wonFlag = (state === 'won') ? '1' : '0';
+    const params = 'si_finished=1&si_score=' + score + '&si_stars=' + starCount + '&si_won=' + wonFlag;
+
+    // Najdi URL top-level Streamlit stranky
+    let topUrl = null;
+    try { topUrl = window.top.location.href; } catch(e){}
+    if(!topUrl){
+      try { topUrl = document.referrer; } catch(e){}
+    }
+
+    if(topUrl){
+      const baseUrl = topUrl.split('?')[0].split('#')[0];
+      const fullUrl = baseUrl + '?' + params;
+      try { window.top.location.href = fullUrl; return; } catch(e){}
+      try { window.top.location.replace(fullUrl); return; } catch(e){}
+      // Form submit do top okna (obejde nektere cross-origin restrikce)
+      try {
+        const f = document.createElement('form');
+        f.method = 'GET'; f.action = baseUrl; f.target = '_top';
+        const add = (n, v) => {
+          const i = document.createElement('input');
+          i.type = 'hidden'; i.name = n; i.value = v;
+          f.appendChild(i);
+        };
+        add('si_finished', '1');
+        add('si_score', String(score));
+        add('si_stars', String(starCount));
+        add('si_won', wonFlag);
+        document.body.appendChild(f); f.submit();
+        return;
+      } catch(e){}
+    }
+
+    // Posledni pokus: kotva s target=_top, relativni URL
+    try {
+      const a = document.createElement('a');
+      a.href = '?' + params;
+      a.target = '_top';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      return;
+    } catch(e){}
+
+    // Vsechno selhalo - povol opakovani a upozorni
+    navigated = false;
+    alert('Nepodařilo se poslat skóre do aplikace. Vrať se přes levé menu.');
   }
 
   // ---------- INPUT ----------
