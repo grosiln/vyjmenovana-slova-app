@@ -169,6 +169,8 @@ def init_state():
         st.session_state.menu_sekce = st.session_state.sekce
     if "test" not in st.session_state:
         st.session_state.test = None
+    if "vyber_pismeno" not in st.session_state:
+        st.session_state.vyber_pismeno = "Všechna"
 
 
 def priprav_test_iy(vyber):
@@ -496,6 +498,9 @@ def nastav_vzhled():
         [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] div {
             color: white !important;
         }
+        [data-testid="stSidebar"] [data-baseweb="select"] * {
+            color: #1f2937 !important;
+        }
         .stButton > button {
             font-size: 1.35rem !important;
             font-weight: 700 !important;
@@ -550,7 +555,7 @@ def main():
         st.session_state.sekce = "Domů"
 
     st.sidebar.markdown("### 🎮 Spuštění testu")
-    vyber = st.sidebar.selectbox("Písmeno pro test", PISMENA, index=0)
+    vyber = st.sidebar.selectbox("Písmeno pro test", PISMENA, key="vyber_pismeno")
     if st.sidebar.button("Spustit test Doplň i/y", use_container_width=True):
         priprav_test_iy(vyber)
         st.session_state.sekce = "Test"
