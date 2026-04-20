@@ -165,7 +165,9 @@ def _html_hry() -> str:
       shootCd = SHOOT_CD;
       sndShoot();
     }
-    if((state === 'gameover' || state === 'won') && (e.code === 'Enter' || e.code === 'Space')){
+    // Na konci hry pouze Enter navaha na ulozeni skore - Space by jinak
+    // mohl omylem spustit novou hru (napr. kdyz je focus na tlacitku).
+    if((state === 'gameover' || state === 'won') && e.code === 'Enter'){
       navigateToParent();
     }
   });
@@ -660,21 +662,17 @@ def _render_koncovou_obrazovku(hra):
         st.info("Tvé skóre se bohužel nevešlo do TOP 10. Zkus to znovu!")
 
     st.markdown("---")
-    c1, c2, c3 = st.columns(3)
+    st.caption(
+        "👉 Novou hru spustíš přes levé menu (Minihry). "
+        "Tím předejdeš nechtěnému startu hry mezerníkem."
+    )
+    c1, c2 = st.columns(2)
     with c1:
-        if st.button("🎮 Hrát znovu (3 ⭐)", key="si_end_play_again", use_container_width=True):
-            from app import utrat_hvezdy
-            if utrat_hvezdy(3):
-                spustit_hru()
-                st.rerun()
-            else:
-                st.error("Nemáš dost hvězdiček.")
-    with c2:
         if st.button("🏆 Zobrazit žebříček", key="si_end_zebricek", use_container_width=True):
             st.session_state.space_invaders = None
             nastav_sekci("Žebříček miniher")
             st.rerun()
-    with c3:
+    with c2:
         if st.button("⬅️ Zpět na výběr her", key="si_end_back", use_container_width=True):
             st.session_state.space_invaders = None
             st.rerun()

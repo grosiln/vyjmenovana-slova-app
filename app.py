@@ -249,6 +249,15 @@ def vynuluj_utracene_hvezdy():
 MAX_JMENO_ZEBRICEK = 12
 LIMIT_ZEBRICKU = 10
 
+# Zaznam her, ktere maji svuj zebricek. Dalsi hry staci pridat sem,
+# render_zebricek() je automaticky zobrazi jako zalozky.
+HRY_SE_ZEBRICKEM = [
+    {"klic": "space", "nazev": "👾 Space Invaders"},
+    # Pripraveno pro dalsi dve hry, az je dopiseme:
+    # {"klic": "hra2", "nazev": "..."},
+    # {"klic": "hra3", "nazev": "..."},
+]
+
 
 def ziskej_zebricek(hra="space"):
     data = nacti_statistiky()
@@ -709,69 +718,81 @@ def render_minihry():
     st.info("Hry jsou odměna za trénink. Za každých 10 správných odpovědí získáš 1 hvězdičku.")
 
 
-def render_zebricek():
-    st.header("🏆 Žebříček miniher")
-    st.markdown("TOP 10 nejlepších hráčů ve hře **👾 Space Invaders**.")
-
-    zebricek = ziskej_zebricek("space")
+def _render_tabulka_zebricku(klic_hry, nazev_hry):
+    zebricek = ziskej_zebricek(klic_hry)
+    st.markdown(f"#### {nazev_hry} — TOP {LIMIT_ZEBRICKU}")
 
     if not zebricek:
-        st.info("Zatím nikdo není v žebříčku. Zahraj si a buď první!")
-        if st.button("🎮 Hrát Space Invaders", use_container_width=True):
-            nastav_sekci("Minihry")
+        st.info("Zatím nikdo není v žebříčku této hry.")
+    else:
+        radky = ""
+        for i, z in enumerate(zebricek, start=1):
+            if i == 1:
+                medaile = "🥇"
+            elif i == 2:
+                medaile = "🥈"
+            elif i == 3:
+                medaile = "🥉"
+            else:
+                medaile = f"{i}."
+            jmeno = str(z.get("jmeno", "?"))[:MAX_JMENO_ZEBRICEK]
+            skore = int(z.get("skore", 0))
+            hvezdy = int(z.get("hvezdy", 0))
+            datum = str(z.get("datum", ""))
+            radky += f"""
+                <div class="lb-row lb-rank-{i}">
+                    <div class="lb-rank">{medaile}</div>
+                    <div class="lb-name">{jmeno}</div>
+                    <div class="lb-score">{skore} b.</div>
+                    <div class="lb-stars">⭐ {hvezdy}</div>
+                    <div class="lb-date">{datum}</div>
+                </div>
+            """
+
+        st.markdown(
+            f"""
+            <div class="lb-wrap">
+                <div class="lb-head">
+                    <div class="lb-rank">#</div>
+                    <div class="lb-name">Jméno</div>
+                    <div class="lb-score">Skóre</div>
+                    <div class="lb-stars">Hvězdy</div>
+                    <div class="lb-date">Datum</div>
+                </div>
+                {radky}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with st.expander("⚠️ Správa žebříčku této hry"):
+        if st.button(
+            "Smazat žebříček",
+            key=f"lb_clear_{klic_hry}",
+            use_container_width=True,
+        ):
+            vymaz_zebricek(klic_hry)
+            st.success("Žebříček byl smazán.")
             st.rerun()
+
+
+def render_zebricek():
+    st.header("🏆 Žebříček miniher")
+    st.caption("Hru pustíš přes levé menu → Minihry.")
+
+    if not HRY_SE_ZEBRICKEM:
+        st.info("Zatím není žádná hra.")
         return
 
-    radky = ""
-    for i, z in enumerate(zebricek, start=1):
-        if i == 1:
-            medaile = "🥇"
-        elif i == 2:
-            medaile = "🥈"
-        elif i == 3:
-            medaile = "🥉"
-        else:
-            medaile = f"{i}."
-        jmeno = str(z.get("jmeno", "?"))[:MAX_JMENO_ZEBRICEK]
-        skore = int(z.get("skore", 0))
-        hvezdy = int(z.get("hvezdy", 0))
-        datum = str(z.get("datum", ""))
-        radky += f"""
-            <div class="lb-row lb-rank-{i}">
-                <div class="lb-rank">{medaile}</div>
-                <div class="lb-name">{jmeno}</div>
-                <div class="lb-score">{skore} b.</div>
-                <div class="lb-stars">⭐ {hvezdy}</div>
-                <div class="lb-date">{datum}</div>
-            </div>
-        """
-
-    st.markdown(
-        f"""
-        <div class="lb-wrap">
-            <div class="lb-head">
-                <div class="lb-rank">#</div>
-                <div class="lb-name">Jméno</div>
-                <div class="lb-score">Skóre</div>
-                <div class="lb-stars">Hvězdy</div>
-                <div class="lb-date">Datum</div>
-            </div>
-            {radky}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    c1, c2 = st.columns(2)
-    if c1.button("🎮 Hrát znovu", use_container_width=True):
-        nastav_sekci("Minihry")
-        st.rerun()
-    with c2:
-        with st.expander("⚠️ Správa žebříčku"):
-            if st.button("Smazat celý žebříček", key="lb_clear", use_container_width=True):
-                vymaz_zebricek("space")
-                st.success("Žebříček byl smazán.")
-                st.rerun()
+    if len(HRY_SE_ZEBRICKEM) == 1:
+        hra = HRY_SE_ZEBRICKEM[0]
+        _render_tabulka_zebricku(hra["klic"], hra["nazev"])
+    else:
+        nazvy = [h["nazev"] for h in HRY_SE_ZEBRICKEM]
+        zalozky = st.tabs(nazvy)
+        for zalozka, hra in zip(zalozky, HRY_SE_ZEBRICKEM):
+            with zalozka:
+                _render_tabulka_zebricku(hra["klic"], hra["nazev"])
 
 
 def render_dnesni_skore():
@@ -1046,6 +1067,15 @@ def zpracuj_query_params():
     params = st.query_params
     if params.get("si_finished") != "1":
         return
+    # Pokud uz mame koncovou obrazovku nastavenou (napr. po rerun),
+    # jen vycisti URL a nech stavajici state byt (jinak bychom zresetovali ulozeno=False).
+    existing = st.session_state.get("space_invaders")
+    if existing and existing.get("koncova_obrazovka"):
+        try:
+            st.query_params.clear()
+        except Exception:
+            pass
+        return
     try:
         skore = int(params.get("si_score", "0"))
     except (TypeError, ValueError):
@@ -1055,6 +1085,10 @@ def zpracuj_query_params():
     except (TypeError, ValueError):
         hvezdy = 0
     vyhra = params.get("si_won") == "1"
+    try:
+        st.query_params.clear()
+    except Exception:
+        pass
     st.session_state.space_invaders = {
         "aktivni": True,
         "start_potvrzen": True,
@@ -1066,7 +1100,6 @@ def zpracuj_query_params():
         "jmeno_ulozene": "",
     }
     nastav_sekci("Minihry")
-    st.query_params.clear()
 
 
 def main():
